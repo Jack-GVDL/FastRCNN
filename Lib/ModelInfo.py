@@ -546,7 +546,7 @@ class TrainProcessInfo_ResultRecorder(TrainProcessInfo):
 		content += f"Accuracy: "
 		for i, result in enumerate(result_list):
 
-			content += f"{(result.getAccuracy()):.2f}"
+			content += f"{(result.getAccuracy() * 100):.2f}%"
 			if i != len(result_list) - 1:
 				content += ", "
 
@@ -556,7 +556,7 @@ class TrainProcessInfo_ResultRecorder(TrainProcessInfo):
 		result: str = ""
 		result 		+= "Operation: save best state dict\n"
 		result		+= f"Best: Epoch: {self.best_epoch}; "
-		result		+= f"Loss: {self.best_loss:.2f}; "
-		result 		+= f"Accuracy: {self.best_accuracy:.2f}\n"
+		result		+= f"Loss: {self.best_loss:.4f}; "
+		result 		+= f"Accuracy: {(self.best_accuracy* 100):.2f}\n"
 		result		+= f"File: ModelStateDict.tar\n"
 		return result

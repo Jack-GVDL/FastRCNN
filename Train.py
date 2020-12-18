@@ -6,18 +6,7 @@ import torch.optim as optim
 from Lib import *
 
 
-# parameter / constant
-file_config_train = "./Data/train/Data_20201216100337_0.5_1.0_0.1_0.5.json"
-# file_config_train 	= "./Data/train/Data_20201215104746_0.7_0.3.json"
-# file_config_train 	= "./Data/train/Data_20201215145930_0.7_0.1.json"
-file_config_val = "./Data/val/Data.json"
-file_config_test = "./Data/test/Data.json"
-
-data_path_train = "./Data/train"
-data_path_val = "./Data/val"
-data_path_test = "./Data/test"
-
-# check env
+# ----- check environment -----
 # env_device = torch.cuda.current_device()
 env_device = "cuda:0" if torch.cuda.is_available() else "cpu"
 env_device = torch.device(env_device)
@@ -27,26 +16,37 @@ print(f"CUDA available: {torch.cuda.is_available()}")
 print(f"Device name:    {torch.cuda.get_device_name(env_device)}")
 print(f"Device memory:  {torch.cuda.get_device_properties(env_device).total_memory}")
 
-# model
+# ----- model -----
 info = ModelInfo()
 info.epoch 			= 5
 info.batch_size 	= 1
 info.learning_rate	= 5e-4
-info.train_parameter["Momentum"] 	= 0.9
-info.train_parameter["DataTrain"]	= file_config_train
-info.train_parameter["DataVal"]		= file_config_val
-info.train_parameter["DataTest"]	= file_config_test
+info.train_parameter["Momentum"] = 0.9
 
 info.device_train 	= env_device
 info.device_test 	= env_device
 info.model 			= FastRCNN()
 
 info.optimizer = optim.SGD(info.model.parameters(), lr=info.learning_rate, momentum=info.train_parameter["Momentum"])
-# pack.optimizer		= optim.Adam(pack.net.parameters(), lr=1e-4)
-# pack.scheduler	= optim.lr_scheduler.StepLR(pack.optimizer, step_size=30, gamma=0.1)
+# info.optimizer		= optim.Adam(pack.net.parameters(), lr=1e-4)
+
+# info.scheduler	= optim.lr_scheduler.StepLR(pack.optimizer, step_size=30, gamma=0.1)
+info.scheduler = None
 
 print(f"----- Model -----")
 print(info.model)
+
+# ----- dataset -----
+# data file
+file_config_train	= "./Data/train/Data_20201216100337_0.5_1.0_0.1_0.5.json"
+# file_config_train 	= "./Data/train/Data_20201215104746_0.7_0.3.json"
+# file_config_train 	= "./Data/train/Data_20201215145930_0.7_0.1.json"
+file_config_val		= "./Data/val/Data.json"
+file_config_test	= "./Data/test/Data.json"
+
+data_path_train	= "./Data/train"
+data_path_val	= "./Data/val"
+data_path_test	= "./Data/test"
 
 # config
 config_train 			= Config_Processed()
@@ -73,7 +73,17 @@ dataset_list: Dict = {
 	"Test": dataset_test
 }
 
-# process
+# save to info
+info.train_parameter["DataTrain"]	= file_config_train
+info.train_parameter["DataVal"]		= file_config_val
+info.train_parameter["DataTest"]	= file_config_test
+
+print(f"----- Dataset -----")
+print(info.train_parameter["DataTrain"])
+print(info.train_parameter["DataVal"])
+print(info.train_parameter["DataTest"])
+
+# ----- process -----
 now 			= datetime.now()
 current_time 	= now.strftime("%Y%m%d%H%M%S")
 
@@ -98,8 +108,15 @@ info.process_list.append(process_codeFileSaver)
 info.process_list.append(process_dictDataSaver)
 info.process_list.append(process_resultRecorder)
 
-# train
+# ----- train -----
 print(f"----- Train -----")
 time.sleep(0.1)
+
+info.model.setGradient(FastRCNN.Layer.INPUT_CONV,	False)
+info.model.setGradient(FastRCNN.Layer.ALEXNET,		False)
+info.model.setGradient(FastRCNN.Layer.POOL, 		False)
+info.model.setGradient(FastRCNN.Layer.FEATURE, 		True)
+info.model.setGradient(FastRCNN.Layer.SOFTMAX, 		True)
+info.model.setGradient(FastRCNN.Layer.BOX,	 		True)
 
 train(dataset_list, info)

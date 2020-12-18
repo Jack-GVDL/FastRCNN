@@ -77,6 +77,10 @@ def convert_BoxIOU_ConfusionMatrix(box_iou: np.ndarray, predict_class: np.ndarra
 	#			2F
 	# ...
 	"""
+	# box_iou: true: 0; false: 1
+	# which means offset is 0 for truth and 1 for false, based on the description in above confusion matrix
+	box_iou = (box_iou == 0) * 1
+
 	# it is assumed that the size of predict_class and y_class are the same
 	n = class_size
 
@@ -99,8 +103,11 @@ def convert_BoxIOU_ConfusionMatrix(box_iou: np.ndarray, predict_class: np.ndarra
 			continue
 
 		row = (y_class[i] - 1) * 2
-		col = (y_class[i] - 1) * 2 + box_iou[i] * 1  # box_iou: true: 1; false: 0
+		col = (y_class[i] - 1) * 2 + box_iou[i] * 1
 		confusion_matrix[row][col] += 1
+
+	print(confusion_matrix)
+	breakpoint()
 
 	return confusion_matrix
 
