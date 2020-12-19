@@ -133,8 +133,8 @@ def offsetBox(box_list, offset_list) -> Any:
 	# do not do inplace operation unless it is clearly inform to user
 	box_list = box_list.copy()
 
-	box_list[:, 0] = box_list[:, 0] + offset_list[:, 0]
-	box_list[:, 1] = box_list[:, 1] + offset_list[:, 1]
+	box_list[:, 0] = box_list[:, 0] + box_list[:, 2] * offset_list[:, 0]
+	box_list[:, 1] = box_list[:, 1] + box_list[:, 3] * offset_list[:, 1]
 	box_list[:, 2] = box_list[:, 2] * np.exp(offset_list[:, 2])
 	box_list[:, 3] = box_list[:, 3] * np.exp(offset_list[:, 3])
 

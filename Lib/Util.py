@@ -116,14 +116,12 @@ def computeIOU(boxes_1, boxes_2):
 def normalizeImage(image_list) -> Any:
 	image_list = image_list.copy()
 
-	# TODO: find a better way
-	for i in range(image_list.shape[0]):
+	image_max 	= np.max(image_list.reshape(4, -1), axis=1)
+	image_min 	= np.min(image_list.reshape(4, -1), axis=1)
+	image_range = image_max - image_min
 
-		value_min = np.min(image_list[i])
-		value_max = np.max(image_list[i])
-
-		image_list[i] -= value_min
-		image_list[i] /= (value_max - value_min)
+	image_list 	= image_list - image_min.reshape((4, 1, 1))
+	image_list	= image_list / image_range.reshape((4, 1, 1))
 
 	return image_list
 
@@ -141,8 +139,8 @@ def plotImage(data, sev_box_list, mod_box_list, null_box_list) -> None:
 	# normalize
 	image_list = normalizeImage(data)
 
-	def draw_box(box, color):
-		x, y, w, h = box
+	def draw_box(box_, color):
+		x, y, w, h = box_
 		if x == 0:
 			x = 1
 		if y == 0:

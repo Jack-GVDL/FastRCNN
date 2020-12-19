@@ -87,6 +87,10 @@ class FastRCNN(
 		)
 
 		# ----- Loss -----
+		# imbalance factor
+		self.imbalance_class = 1.0
+		self.imbalance_box   = 1.0
+
 		# simple method
 		self.cross_entropy_loss = nn.CrossEntropyLoss()
 		self.smooth_l1_loss		= nn.SmoothL1Loss()
@@ -150,12 +154,6 @@ class FastRCNN(
 		return cls_score, box
 
 	def criterion(self, predict_class, predict_box, y_class, y_box):
-		print(predict_class.shape)
-		print(predict_box.shape)
-		print(y_class.shape)
-		print(y_box.shape)
-		breakpoint()
-
 		# ----- label -----
 		loss_class = self.cross_entropy_loss(predict_class, y_class)
 
@@ -173,10 +171,7 @@ class FastRCNN(
 		loss_box = self.smooth_l1_loss(predict_box.gather(1, label).squeeze(1) * mask, y_box * mask)
 
 		# this is the sample method
-		imbalance_class = 1.0
-		imbalance_box   = 1.0
-
-		loss_total = imbalance_class * loss_class + imbalance_box * loss_box
+		loss_total = self.imbalance_class * loss_class + self.imbalance_box * loss_box
 		return loss_total, loss_class, loss_box
 
 		# this is the complex method and not yet verify

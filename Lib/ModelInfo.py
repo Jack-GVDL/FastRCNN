@@ -557,6 +557,6 @@ class TrainProcessInfo_ResultRecorder(TrainProcessInfo):
 		result 		+= "Operation: save best state dict\n"
 		result		+= f"Best: Epoch: {self.best_epoch}; "
 		result		+= f"Loss: {self.best_loss:.4f}; "
-		result 		+= f"Accuracy: {(self.best_accuracy* 100):.2f}\n"
+		result 		+= f"Accuracy: {(self.best_accuracy* 100):.2f}%\n"
 		result		+= f"File: ModelStateDict.tar\n"
 		return result
