@@ -43,7 +43,7 @@ def trainBatch_(
 def trainBatch(info: ModelInfo, data_list: List[Any], is_val=False) -> Any:
 	# foreach data in the batch
 	# the size of each image is (4 * 840 * 840) => (channel, H, W)
-	image_list 		= np.ndarray((0, 4, 840, 840), 	dtype=float)
+	image_list 		= torch.tensor(np.ndarray((0, 4, 840, 840)), dtype=torch.float)
 	roi_list 		= np.ndarray((0, 4), 			dtype=float)
 	class_list 		= np.ndarray((0,), 				dtype=int)
 	offset_list 	= np.ndarray((0, 4), 			dtype=float)
@@ -53,7 +53,8 @@ def trainBatch(info: ModelInfo, data_list: List[Any], is_val=False) -> Any:
 	for index, data in enumerate(data_list):
 		rois = data[Dataset_Processed.Label.ROI_LIST]
 
-		image_list 		= np.concatenate((image_list, 		data[Dataset_Processed.Label.IMAGE_LIST]),	axis=0)
+		# image_list 		= np.concatenate((image_list, 		data[Dataset_Processed.Label.IMAGE_LIST]),	axis=0)
+		image_list		= torch.cat((image_list, 			data[Dataset_Processed.Label.IMAGE_LIST]),	0)
 		roi_list 		= np.concatenate((roi_list, 		rois),										axis=0)
 		roi_index_list 	= np.concatenate((roi_index_list, 	np.full((rois.shape[0],), index)), 			axis=0)
 		class_list 		= np.concatenate((class_list, 		data[Dataset_Processed.Label.CLASS_LIST]), 	axis=0)
@@ -63,7 +64,10 @@ def trainBatch(info: ModelInfo, data_list: List[Any], is_val=False) -> Any:
 	# move data from host to device (GPU / cuda)
 	device = info.device_test if is_val else info.device_train
 
-	tensor_image_list 		= torch.tensor(image_list, 		dtype=torch.float, 	requires_grad=(not is_val)	).to(device)
+	# tensor_image_list = torch.tensor(image_list, dtype=torch.float, requires_grad=(not is_val)).to(device)
+	tensor_image_list = image_list.to(device)
+	tensor_image_list.requires_grad = (not is_val)
+
 	tensor_roi_list 		= torch.tensor(roi_list, 		dtype=torch.float, 	requires_grad=False			).to(device)
 	tensor_roi_index_list 	= torch.tensor(roi_index_list, 	dtype=torch.float, 	requires_grad=False			).to(device)
 	tensor_class_list 		= torch.tensor(class_list, 		dtype=torch.long, 	requires_grad=False			).to(device)

@@ -1,7 +1,8 @@
 import numpy as np
 import torch
-from Lib.Model import FastRCNN
-from Lib.Dataset_Processed import Dataset_Processed, Config_Processed
+from .Model import FastRCNN
+from .Dataset_Processed import Dataset_Processed, Config_Processed
+from .SelectiveSearch import runSelectiveSearch
 
 
 def visualizeModel(model, dataset, index) -> None:
@@ -27,20 +28,20 @@ def visualizeModel(model, dataset, index) -> None:
 
 if __name__ == '__main__':
 	# model
-	model = FastRCNN()
+	model_ = FastRCNN()
 
 	state_dict = torch.load("./Model/ModelStateDict20201214225501.tar")
-	model.load_state_dict(state_dict)
+	model_.load_state_dict(state_dict)
 
 	# dataset
 	config = Config_Processed()
 	config.file = "./Data/val/Data.json"
 	config.load()
 
-	dataset = Dataset_Processed(config, data_path="./Data/val")
+	dataset_ = Dataset_Processed(config, data_path="./Data/val")
 
 	# execute model
 	# TODO: not yet completed
 
 	# visualize result
-	visualizeModel(model, dataset, 0)
+	visualizeModel(model_, dataset_, 0)

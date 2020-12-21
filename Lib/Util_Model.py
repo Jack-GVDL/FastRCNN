@@ -1,6 +1,7 @@
 from typing import *
 import numpy as np
-from .Util import clipBox_xywh, computeIOU
+import torch
+from .Util import clipBox_xywh, computeIOU, clipBox
 
 
 def computeBoxIOU(predict_class, predict_box, y_class, y_box, theta=0.75):
@@ -106,9 +107,6 @@ def convert_BoxIOU_ConfusionMatrix(box_iou: np.ndarray, predict_class: np.ndarra
 		col = (y_class[i] - 1) * 2 + box_iou[i] * 1
 		confusion_matrix[row][col] += 1
 
-	print(confusion_matrix)
-	breakpoint()
-
 	return confusion_matrix
 
 
@@ -137,5 +135,69 @@ def offsetBox(box_list, offset_list) -> Any:
 	box_list[:, 1] = box_list[:, 1] + box_list[:, 3] * offset_list[:, 1]
 	box_list[:, 2] = box_list[:, 2] * np.exp(offset_list[:, 2])
 	box_list[:, 3] = box_list[:, 3] * np.exp(offset_list[:, 3])
+
+	return box_list
+
+
+# below accept tensor instead of np.ndarray
+# assume: box_list: format: x1y1x2y2
+def getAnchor_topLeft(box_list, size_grid, size_image) -> Any:
+	position = (box_list[:, 0:2]).clone()
+	box_list = _getAnchor_(position, size_grid, size_image)
+	return box_list
+
+
+def getAnchor_topRight(box_list, size_grid, size_image) -> Any:
+	position_x = (box_list[:, 2:3]).clone()
+	position_y = (box_list[:, 1:2]).clone()
+
+	position = torch.cat((position_x, position_y), 1)
+	box_list = _getAnchor_(position, size_grid, size_image)
+	return box_list
+
+
+def getAnchor_bottomLeft(box_list, size_grid, size_image) -> Any:
+	position_x = (box_list[:, 0:1]).clone()
+	position_y = (box_list[:, 3:4]).clone()
+
+	position = torch.cat((position_x, position_y), 1)
+	box_list = _getAnchor_(position, size_grid, size_image)
+	return box_list
+
+
+def getAnchor_bottomRight(box_list, size_grid, size_image) -> Any:
+	position = (box_list[:, 2:4]).clone()
+	box_list = _getAnchor_(position, size_grid, size_image)
+	return box_list
+
+
+def _getAnchor_(position, size_grid, size_image) -> Any:
+	position = position.clone()
+
+	grid_h_half = size_grid[1] // 2
+	grid_w_half = size_grid[0] // 2
+
+	position_top_left		= position.clone()
+	position_bottom_right	= position.clone()
+
+	position_top_left[:, 0] 	-= grid_w_half
+	position_top_left[:, 1]		-= grid_h_half
+	position_bottom_right[:, 0] += grid_w_half
+	position_bottom_right[:, 1] += grid_h_half
+
+	box_list = torch.cat((position_top_left, position_bottom_right), 1)
+	box_list = _clipBox_(box_list, size_image)
+
+	return box_list
+
+
+# TODO: may move to Util
+def _clipBox_(box_list, size) -> Any:
+	box_list = box_list.clone()
+
+	box_list[:, 0] = torch.clamp(box_list[:, 0], min=0,	max=size[0])
+	box_list[:, 1] = torch.clamp(box_list[:, 1], min=0,	max=size[1])
+	box_list[:, 2] = torch.clamp(box_list[:, 2], min=0,	max=size[0])
+	box_list[:, 3] = torch.clamp(box_list[:, 3], min=0,	max=size[1])
 
 	return box_list

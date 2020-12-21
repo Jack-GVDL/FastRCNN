@@ -38,11 +38,9 @@ print(info.model)
 
 # ----- dataset -----
 # data file
-file_config_train	= "./Data/train/Data_20201216100337_0.5_1.0_0.1_0.5.json"
-# file_config_train 	= "./Data/train/Data_20201215104746_0.7_0.3.json"
-# file_config_train 	= "./Data/train/Data_20201215145930_0.7_0.1.json"
+file_config_train	= "./Data/train/Data_20201220160131_0.5_1.0_0.1_0.5_160_480.json"
+file_config_test	= "./Data/test/Data_20201220143626_0.5_1.0_0.1_0.5.json"
 file_config_val		= "./Data/val/Data.json"
-file_config_test	= "./Data/test/Data.json"
 
 data_path_train	= "./Data/train"
 data_path_val	= "./Data/val"

@@ -2,7 +2,9 @@ from typing import *
 import os
 import json
 import numpy as np
+import torch
 from torch.utils.data import Dataset
+import torchvision.transforms as transforms
 
 from .Dataset_Image import Dataset_Image
 from .Util import normalizeImage, getCenterBox, normalizeBox
@@ -102,6 +104,14 @@ class Dataset_Processed(Dataset):
 		self._config	= config
 		self._data_path	= data_path
 
+		self.size_positive:	int = 16
+		self.size_negative:	int = 48
+
+		self._transform = transforms.Compose([
+			# transforms.ToTensor(),  # image is not in standard RGB (255, 255, 255) format, cannot use this
+			transforms.Normalize(mean=(0.5, 0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5, 0.5))
+		])
+
 		# operation
 		# ...
 
@@ -123,13 +133,21 @@ class Dataset_Processed(Dataset):
 		# image processing
 		# - clipping: 		there some image that the width is 841 instead of 840
 		# - normalization:	range of image intensity is not within [0.0, 1.0]
+		# cropping
+		# TODO: may consider to use torchvision.transform
 		image_list = image_list[:, :840, :840]
-		image_list = image_list.reshape((1, 4, 840, 840))
+
+		# normalization
+		# normalizeImage will get pixel at range of [0.0, 0.1]
+		# but the normally it require the range to be [-1.0, 1.0], so torchvision.Normalize() is need
 		image_list = normalizeImage(image_list)
+		image_list = torch.tensor(image_list, dtype=torch.float)
+
+		# convert to shape of (1, 4, 840, 840) for later concatenation
+		image_list = image_list.reshape((1, 4, 840, 840))
 
 		# ----- roi -----
 		roi_list	= np.array(data[Config_Processed.Label.ROI_LIST], dtype=np.int32)
-		temp_roi	= normalizeBox(roi_list.astype(np.float32), (840, 840))
 
 		# ----- class -----
 		class_list = np.array(data[Config_Processed.Label.CLASS_LIST], dtype=np.int32)
@@ -137,6 +155,31 @@ class Dataset_Processed(Dataset):
 		# ----- offset -----
 		box_list	= np.array(data[Config_Processed.Label.BOX_LIST], dtype=np.int32)
 		box_list	= normalizeBox(box_list.astype(np.float32), (840, 840))
+
+		# get and divide positive and negative
+		index_positive = np.where(class_list != 0)[0]
+		index_negative = np.where(class_list == 0)[0]
+
+		index_positive = np.random.permutation(index_positive)
+		index_negative = np.random.permutation(index_negative)
+
+		index_positive = index_positive[:min(index_positive.shape[0], self.size_positive)]
+		index_negative = index_negative[:min(index_negative.shape[0], self.size_negative)]
+
+		class_positive 	= class_list[index_positive]
+		roi_positive	= roi_list[index_positive]
+		box_positive	= box_list[index_positive]
+
+		class_negative	= class_list[index_negative]
+		roi_negative	= roi_list[index_negative]
+		box_negative	= box_list[index_negative]
+
+		class_list	= np.concatenate((class_positive, class_negative))
+		roi_list	= np.concatenate((roi_positive, roi_negative))
+		box_list	= np.concatenate((box_positive, box_negative))
+
+		# get normalized roi
+		temp_roi = normalizeBox(roi_list.astype(np.float32), (840, 840))
 
 		# normalize and get offset
 		temp_roi 	= getCenterBox(temp_roi)
@@ -149,7 +192,12 @@ class Dataset_Processed(Dataset):
 			self.Label.ROI_LIST:	roi_list,
 			self.Label.CLASS_LIST:	class_list,
 			self.Label.OFFSET_LIST:	offset_list,
-			self.Label.BOX_LIST:	box_list
+			self.Label.BOX_LIST:	box_list,
+
+			# self.Label.ROI_LIST:	torch.tensor(roi_list,		dtype=torch.float,	requires_grad=False),
+			# self.Label.CLASS_LIST:	torch.tensor(class_list,	dtype=torch.float,	requires_grad=False),
+			# self.Label.OFFSET_LIST:	torch.tensor(offset_list,	dtype=torch.long,	requires_grad=False),
+			# self.Label.BOX_LIST:	torch.tensor(box_list,		dtype=torch.float,	requires_grad=False)
 		}
 
 		return temp

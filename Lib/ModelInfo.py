@@ -161,6 +161,9 @@ class ModelInfo(Interface_DictData):
 		self.device_train	= None
 		self.device_test	= None
 
+		# model parameter
+		self.model_parameter:	Dict	= {}
+
 		# train parameter
 		self.epoch:				int		= 100
 		self.batch_size: 		int		= 2
@@ -243,6 +246,7 @@ class ModelInfo(Interface_DictData):
 			"Epoch":			self.epoch,
 			"BatchSize":		self.batch_size,
 			"LearningRate":		self.learning_rate,
+			"ModelParameter":	self.model_parameter,
 			"TrainParameter":	self.train_parameter,
 
 			# data of each iteration / epoch

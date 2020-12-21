@@ -186,7 +186,8 @@ def generateNegative(data, size, threshold: Tuple[float, float] = 0.3) -> Dict:
 # while below 0.5 for rest of the ground truth
 def generateROI(
 		file_json: str, config_src: Config_Processed,
-		positive: Tuple[float, float] = 0.7, negative: Tuple[float, float] = 0.3) -> None:
+		positive: Tuple[float, float] = 0.7, negative: Tuple[float, float] = 0.3,
+		size_positive: int = 16, size_negative: int = 48) -> None:
 
 	# ----- generate data list -----
 	config = Config_Processed()
@@ -196,8 +197,8 @@ def generateROI(
 		data = config_src[i]
 
 		# get list of positive and negative box
-		positive_list = generatePositive(data, 16, threshold=positive)
-		negative_list = generateNegative(data, 48, threshold=negative)
+		positive_list = generatePositive(data, size_positive, threshold=positive)
+		negative_list = generateNegative(data, size_negative, threshold=negative)
 
 		# merge positive and negative list
 		roi_list = np.concatenate((
@@ -250,10 +251,14 @@ if __name__ == '__main__':
 
 	iou_positive = (0.5, 1.0)
 	iou_negative = (0.1, 0.5)
+	size_positive = 160
+	size_negative = 480
 
-	# file_src = "./Data/train/DataRaw.json"
-	file_src = "./Data/test/Data.json"
-	file_dst = f"./Data/test/Data_{current_time}_{iou_positive[0]}_{iou_positive[1]}_{iou_negative[0]}_{iou_negative[1]}.json"
+	file_src = "../Data/train/DataRaw.json"
+	# file_src = "../Data/test/Data.json"
+	file_dst = f"../Data/train/Data_" +\
+				f"{current_time}_{iou_positive[0]}_{iou_positive[1]}_{iou_negative[0]}_{iou_negative[1]}_" +\
+				f"{size_positive}_{size_negative}.json"
 
 	# get dataset
 	config_src = Config_Processed()
@@ -261,7 +266,9 @@ if __name__ == '__main__':
 	config_src.load()
 
 	# generate ROI
-	generateROI(file_dst, config_src, positive=iou_positive, negative=iou_negative)
+	generateROI(
+		file_dst, config_src, positive=iou_positive, negative=iou_negative, size_positive=16, size_negative=size_negative)
+
 	print(f"Generate file: {file_dst}")
 
 	# show result

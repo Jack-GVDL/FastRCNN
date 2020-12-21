@@ -215,7 +215,7 @@ if __name__ == '__main__':
 		# normalize image
 		# image_ = normalizeImage(image_)
 
-		grid_size = (10, 10)
+		grid_size = (20, 20)
 
 		start_time = time.time()
 		result_ = runSelectiveSearch(image_, 25, grid_size)
@@ -225,6 +225,12 @@ if __name__ == '__main__':
 		grid_h = 840 // grid_size[1]
 
 		result_ *= np.array([[grid_w, grid_h, grid_w, grid_h]])
+
+		result_[:, 0] += 5
+		result_[:, 1] += 5
+		result_[:, 2] -= 5
+		result_[:, 3] -= 5
+
 		result_ += np.array([[0, 0, grid_w, grid_h]])
 		result_ = convert_x1y1x2y2_xywh(result_)
 
