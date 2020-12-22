@@ -139,6 +139,7 @@ def offsetBox(box_list, offset_list) -> Any:
 	return box_list
 
 
+# ----- version 1 -----
 # below accept tensor instead of np.ndarray
 # assume: box_list: format: x1y1x2y2
 def getAnchor_topLeft(box_list, size_grid, size_image) -> Any:
@@ -171,6 +172,89 @@ def getAnchor_bottomRight(box_list, size_grid, size_image) -> Any:
 	return box_list
 
 
+# ----- version 2 -----
+# below accept tensor instead of np.ndarray
+# assume: box_list: format: x1y1x2y2
+def getAnchor_left(box_list, size_image) -> Any:
+	box_w = box_list[:, 2] - box_list[:, 0]
+
+	box_1 = box_list[:, 0] - box_w
+	box_2 = box_list[:, 1]
+	box_3 = box_list[:, 0]
+	box_4 = box_list[:, 3]
+
+	# reshape for torch.cat
+	box_1 = box_1.view((-1, 1))
+	box_2 = box_2.view((-1, 1))
+	box_3 = box_3.view((-1, 1))
+	box_4 = box_4.view((-1, 1))
+
+	box_list = torch.cat((box_1, box_2, box_3, box_4), 1)
+	box_list = _clipBox_(box_list, size_image)
+
+	return box_list
+
+
+def getAnchor_right(box_list, size_image) -> Any:
+	box_w = box_list[:, 2] - box_list[:, 0]
+
+	box_1 = box_list[:, 2]
+	box_2 = box_list[:, 1]
+	box_3 = box_list[:, 2] + box_w
+	box_4 = box_list[:, 3]
+
+	# reshape for torch.cat
+	box_1 = box_1.view((-1, 1))
+	box_2 = box_2.view((-1, 1))
+	box_3 = box_3.view((-1, 1))
+	box_4 = box_4.view((-1, 1))
+
+	box_list = torch.cat((box_1, box_2, box_3, box_4), 1)
+	box_list = _clipBox_(box_list, size_image)
+
+	return box_list
+
+
+def getAnchor_top(box_list, size_image) -> Any:
+	box_h = box_list[:, 3] - box_list[:, 1]
+
+	box_1 = box_list[:, 0]
+	box_2 = box_list[:, 1] - box_h
+	box_3 = box_list[:, 2]
+	box_4 = box_list[:, 1]
+
+	# reshape for torch.cat
+	box_1 = box_1.view((-1, 1))
+	box_2 = box_2.view((-1, 1))
+	box_3 = box_3.view((-1, 1))
+	box_4 = box_4.view((-1, 1))
+
+	box_list = torch.cat((box_1, box_2, box_3, box_4), 1)
+	box_list = _clipBox_(box_list, size_image)
+
+	return box_list
+
+
+def getAnchor_bottom(box_list, size_image) -> Any:
+	box_h = box_list[:, 3] - box_list[:, 1]
+
+	box_1 = box_list[:, 0]
+	box_2 = box_list[:, 3]
+	box_3 = box_list[:, 2]
+	box_4 = box_list[:, 3] + box_h
+
+	# reshape for torch.cat
+	box_1 = box_1.view((-1, 1))
+	box_2 = box_2.view((-1, 1))
+	box_3 = box_3.view((-1, 1))
+	box_4 = box_4.view((-1, 1))
+
+	box_list = torch.cat((box_1, box_2, box_3, box_4), 1)
+	box_list = _clipBox_(box_list, size_image)
+
+	return box_list
+
+
 def _getAnchor_(position, size_grid, size_image) -> Any:
 	position = position.clone()
 
@@ -192,12 +276,15 @@ def _getAnchor_(position, size_grid, size_image) -> Any:
 
 
 # TODO: may move to Util
+# assume: format: x1y1x2y2
 def _clipBox_(box_list, size) -> Any:
 	box_list = box_list.clone()
 
-	box_list[:, 0] = torch.clamp(box_list[:, 0], min=0,	max=size[0])
-	box_list[:, 1] = torch.clamp(box_list[:, 1], min=0,	max=size[1])
-	box_list[:, 2] = torch.clamp(box_list[:, 2], min=0,	max=size[0])
-	box_list[:, 3] = torch.clamp(box_list[:, 3], min=0,	max=size[1])
+	# if the size of image is 840 * 840
+	# then valid value of x and y should be both [0, 839]
+	box_list[:, 0] = torch.clamp(box_list[:, 0], min=0,	max=size[0] - 1)
+	box_list[:, 1] = torch.clamp(box_list[:, 1], min=0,	max=size[1] - 1)
+	box_list[:, 2] = torch.clamp(box_list[:, 2], min=0,	max=size[0] - 1)
+	box_list[:, 3] = torch.clamp(box_list[:, 3], min=0,	max=size[1] - 1)
 
 	return box_list

@@ -24,4 +24,15 @@ class Interface_DictData:
 
 	# Operation
 	def getDictData(self) -> Dict:
-		raise NotImplementedError
+		pass
+
+	def setDictData(self, data: Dict) -> None:
+		pass
+
+	# Protected
+	# helper
+	# key in any type as there might be string key or int key
+	def _getDataFromDict_(self, data: Dict, key: Any, default_value: Any) -> Any:
+		if key not in data.keys():
+			return default_value
+		return data[key]

@@ -5,7 +5,8 @@ import torchvision
 import torchvision.models as models
 from Lib.Util import convert_xywh_x1y1x2y2
 from Lib.Util_Interface import Interface_CodePath
-from .Util_Model import getAnchor_topLeft, getAnchor_topRight, getAnchor_bottomLeft, getAnchor_bottomRight
+# from .Util_Model import getAnchor_topLeft, getAnchor_topRight, getAnchor_bottomLeft, getAnchor_bottomRight
+from .Util_Model import getAnchor_top, getAnchor_left, getAnchor_right, getAnchor_bottom
 
 
 # Data Structure
@@ -26,7 +27,7 @@ class FastRCNN(
 		super().__init__()
 
 		# hyper-parameter / constant
-		pool_size			= (13, 13)
+		pool_size			= (15, 15)
 		pool_neighbour_size = (5, 5)
 
 		# alexnet input channel number is 3
@@ -73,6 +74,10 @@ class FastRCNN(
 
 		self.neighbour = nn.Sequential(
 			nn.Linear(	in_features=size_neighbour * 4, out_features=4096),
+			nn.ReLU(	inplace=False),
+			nn.Dropout(	inplace=False),
+
+			nn.Linear(	in_features=4096, out_features=4096),
 			nn.ReLU(	inplace=False),
 			nn.Dropout(	inplace=False)
 		)
@@ -131,11 +136,20 @@ class FastRCNN(
 		# get sample size
 		size_sample = roi_list.shape[0]
 
+		# convert roi from xywh to x1y1x2y2
+		# roi_list = roi_list.clone().detach()
+		roi_list = convert_xywh_x1y1x2y2(roi_list)
+
 		# compute neighbour_list
-		neighbour_1 = getAnchor_topLeft(	roi_list, (25, 25), (840, 840))
-		neighbour_2 = getAnchor_topRight(	roi_list, (25, 25), (840, 840))
-		neighbour_3 = getAnchor_bottomLeft(	roi_list, (25, 25), (840, 840))
-		neighbour_4 = getAnchor_bottomRight(roi_list, (25, 25), (840, 840))
+		# neighbour_1 = getAnchor_topLeft(	roi_list, (25, 25), (840, 840))
+		# neighbour_2 = getAnchor_topRight(	roi_list, (25, 25), (840, 840))
+		# neighbour_3 = getAnchor_bottomLeft(	roi_list, (25, 25), (840, 840))
+		# neighbour_4 = getAnchor_bottomRight(roi_list, (25, 25), (840, 840))
+
+		neighbour_1 = getAnchor_top(	roi_list, (840, 840))
+		neighbour_2 = getAnchor_left(	roi_list, (840, 840))
+		neighbour_3 = getAnchor_right(	roi_list, (840, 840))
+		neighbour_4 = getAnchor_bottom(	roi_list, (840, 840))
 
 		# x = image_list
 		x = image_list
@@ -147,10 +161,6 @@ class FastRCNN(
 		x = self.alexnet_seq(x)
 
 		# roi pooling
-		# convert roi from xywh to x1y1x2y2
-		# roi_list = roi_list.clone().detach()
-		roi_list = convert_xywh_x1y1x2y2(roi_list)
-
 		# concatenate roi_index_list
 		roi_list 	= torch.cat((roi_index_list.view(-1, 1), roi_list), 1)
 		neighbour_1 = torch.cat((roi_index_list.view(-1, 1), neighbour_1), 1)

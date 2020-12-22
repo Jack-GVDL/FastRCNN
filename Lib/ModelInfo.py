@@ -13,7 +13,7 @@ from .Util_Interface import Interface_CodePath, Interface_DictData
 # basic
 class TrainResultInfo:
 
-	def __init__(self, confusion_matrix: np.ndarray, loss: float):
+	def __init__(self, confusion_matrix: np.ndarray, loss: float = 0.0):
 		super().__init__()
 
 		# data
@@ -28,9 +28,9 @@ class TrainResultInfo:
 		# row: actual / ground truth
 		# col: prediction
 		# confusion_matrix[row][col]
-		self.confusion_matrix: np.ndarray 	= confusion_matrix
+		self.confusion_matrix: np.ndarray = confusion_matrix
 
-		self.loss:				float		= loss
+		self.loss: float = loss
 
 		# operation
 		# ...
@@ -224,9 +224,11 @@ class ModelInfo(Interface_DictData):
 		# generate iteration data
 		# current, data for each iteration contain
 		# - confusion matrix
+		# - loss
 		for iteration in range(len(self.result_list)):
 			data_iteration: Dict = {}
 
+			# ----- confusion matrix -----
 			# get confusion matrix
 			# matrix_list[data_index][row][col]
 			matrix_list: List[List[List[int]]] = []
@@ -237,6 +239,10 @@ class ModelInfo(Interface_DictData):
 				matrix_list.append(matrix)
 
 			data_iteration["ConfusionMatrix"] = matrix_list
+
+			# ----- loss -----
+			# only store the loss in the first (the most important) result info
+			data_iteration["Loss"] = self.result_list[iteration][0].loss
 
 			# append to iteration list
 			iteration_list.append(data_iteration)
@@ -255,6 +261,44 @@ class ModelInfo(Interface_DictData):
 			# log
 			"Log":				self.log
 		}
+
+	def setDictData(self, data: Dict) -> None:
+		# train parameter
+		self.epoch 				= self._getDataFromDict_(data, "Epoch", self.epoch)
+		self.batch_size			= self._getDataFromDict_(data, "BatchSize", self.batch_size)
+		self.learning_rate		= self._getDataFromDict_(data, "LearningRate", self.learning_rate)
+		self.model_parameter 	= self._getDataFromDict_(data, "ModelParameter", self.model_parameter)
+		self.train_parameter 	= self._getDataFromDict_(data, "TrainParameter", self.train_parameter)
+
+		# log
+		# do we need it ?
+		self.log.clear()
+		self.log = self._getDataFromDict_(data, "Log", self.log)
+
+		# data of each iteration / epoch
+		# do we need it ?
+		# clear the previous data in result_list
+		self.result_list.clear()
+
+		# get iteration list from dict
+		iteration_list = self._getDataFromDict_(data, "IterationData", [])
+
+		for iteration in iteration_list:
+			info_list: List[TrainResultInfo] = []
+
+			# get confusion matrix
+			matrix_list = self._getDataFromDict_(iteration, "ConfusionMatrix", np.zeros((0, 0)))
+
+			for data_matrix in matrix_list:
+				matrix	= np.array(data_matrix)
+				info	= TrainResultInfo(matrix)
+				info_list.append(info)
+
+			# set loss
+			info_list[0].loss = self._getDataFromDict_(iteration, "Loss", 0.0)
+
+			# append to result list
+			self.result_list.append(info_list)
 
 
 # train process info
@@ -384,6 +428,46 @@ class TrainProcessInfo_CodeFileSaver(TrainProcessInfo):
 		return result
 
 
+class TrainProcessInfo_DictDataLoader(TrainProcessInfo):
+
+	def __init__(self):
+		super().__init__()
+
+		# data
+		# file_load should be the full path (either relative or absolute)
+		# file type should be json
+		self.load_list:	List[Tuple[Interface_DictData, str]] = []
+
+		# operation
+		# default stage
+		# no default stage, it depends on situation
+
+	def __del__(self):
+		return
+
+	# Operation
+	def add(self, obj: Interface_DictData, file_path: str) -> bool:
+		self.load_list.append((obj, file_path))
+		return True
+
+	def execute(self, stage: int, info: ModelInfo, data: Dict) -> None:
+		for data_load in self.load_list:
+
+			# get target object and file path
+			# assumed: file and path must exist
+			obj			= data_load[0]
+			file_path	= data_load[1]
+
+			# load data from json file
+			with open(file_path, "r") as f:
+				data_json = f.read()
+
+			data_json = json.loads(data_json)
+
+			# save data to target object
+			obj.setDictData(data_json)
+
+
 class TrainProcessInfo_DictDataSaver(TrainProcessInfo):
 
 	def __init__(self):
@@ -404,7 +488,7 @@ class TrainProcessInfo_DictDataSaver(TrainProcessInfo):
 		self.save_list.append((obj, filename))
 		return True
 
-	def execute(self, stage: int, info: ModelInfo, data_save: Dict) -> None:
+	def execute(self, stage: int, info: ModelInfo, data: Dict) -> None:
 		# it is assumed that folder and path must be exist
 		path 		= info.save_path
 		folder 		= info.save_folder
