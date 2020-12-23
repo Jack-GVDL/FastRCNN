@@ -4,7 +4,7 @@ import numpy as np
 import cmath
 import math
 from Lib.Dataset_Processed import Dataset_Processed, Config_Processed
-from Lib.Util import normalizeImage, plotImage, convert_x1y1x2y2_xywh
+from Lib.Util import normalizeImage, plotImage, convert_x1y1x2y2_xywh, normalizeBox, computeIOU
 
 
 # Function
@@ -208,32 +208,48 @@ if __name__ == '__main__':
 	dataset_val = Dataset_Processed(config_val, data_path="../Data/val")
 
 	for i in range(len(dataset_val)):
+		# ----- get data -----
 		data 	= dataset_val[i]
-		image_ 	= data[Dataset_Processed.Label.IMAGE_LIST][0]
+		image_ 	= data[Dataset_Processed.Label.IMAGE_LIST][0].numpy()
 		roi		= data[Dataset_Processed.Label.ROI_LIST]
+		box		= data[Dataset_Processed.Label.BOX_LIST]
 
 		# normalize image
 		# image_ = normalizeImage(image_)
 
-		grid_size = (20, 20)
+		grid_size = (10, 10)
 
+		# ----- selective search -----
 		start_time = time.time()
 		result_ = runSelectiveSearch(image_, 25, grid_size)
-		print(time.time() - start_time)
+		print(f"Runtime: {time.time() - start_time}")
 
+		# ----- plot image -----
 		grid_w = 840 // grid_size[0]
 		grid_h = 840 // grid_size[1]
 
 		result_ *= np.array([[grid_w, grid_h, grid_w, grid_h]])
+		result_plot = result_.copy()
 
-		result_[:, 0] += 5
-		result_[:, 1] += 5
-		result_[:, 2] -= 5
-		result_[:, 3] -= 5
+		result_plot[:, 0] += 5
+		result_plot[:, 1] += 5
+		result_plot[:, 2] -= 5
+		result_plot[:, 3] -= 5
 
-		result_ += np.array([[0, 0, grid_w, grid_h]])
+		result_plot += np.array([[0, 0, grid_w, grid_h]])
+		result_plot = convert_x1y1x2y2_xywh(result_plot)
+
+		plotImage(image_, np.zeros((0, 4)), roi, result_plot)
+
+		# ----- check IOU -----
+		result_ = np.unique(result_, axis=0)
 		result_ = convert_x1y1x2y2_xywh(result_)
+		result_	= result_.astype(np.float)
+		result_ = normalizeBox(result_, (840, 840))
 
-		plotImage(image_, np.zeros((0, 4)), roi, result_)
+		for i in range(box.shape[0]):
+			iou = computeIOU(result_, np.tile(box[i], (result_.shape[0], 1)))
 
-		breakpoint()
+			print(np.nonzero(iou > 0.1))
+			print(iou[np.nonzero(iou > 0.1)])
+			breakpoint()

@@ -4,6 +4,7 @@ import torch
 from .Util import clipBox_xywh, computeIOU, clipBox
 
 
+# assume: format: predict_box & y_box: xywh
 def computeBoxIOU(predict_class, predict_box, y_class, y_box, theta=0.75):
 	# clip the box to [0.0, 1.0]
 	# there will be error / UB if either xywh is below 0 in computeIOU() function
@@ -251,6 +252,39 @@ def getAnchor_bottom(box_list, size_image) -> Any:
 
 	box_list = torch.cat((box_1, box_2, box_3, box_4), 1)
 	box_list = _clipBox_(box_list, size_image)
+
+	return box_list
+
+
+# ----- version 3 -----
+# box_list: tensor
+def getAnchor(box_list, resize_ratio: Tuple[float, float], size_image: Tuple[int, int]) -> Any:
+	box_w = box_list[:, 2] - box_list[:, 0]
+	box_h = box_list[:, 3] - box_list[:, 1]
+
+	box_w_new = box_w * resize_ratio[0]
+	box_h_new = box_h * resize_ratio[1]
+
+	box_w_new -= box_w
+	box_h_new -= box_h
+
+	box_w_new = torch.floor(box_w_new / 2)
+	box_h_new = torch.floor(box_h_new / 2)
+
+	# expand / retract rect point
+	box_1 = box_list[:, 0] - box_w_new
+	box_2 = box_list[:, 1] - box_h_new
+	box_3 = box_list[:, 2] + box_w_new
+	box_4 = box_list[:, 3] + box_h_new
+
+	# reshape for torch.cat
+	box_1 = box_1.view((-1, 1))
+	box_2 = box_2.view((-1, 1))
+	box_3 = box_3.view((-1, 1))
+	box_4 = box_4.view((-1, 1))
+
+	box_list = torch.cat((box_1, box_2, box_3, box_4), 1)
+	# box_list = _clipBox_(box_list, size_image)
 
 	return box_list
 
