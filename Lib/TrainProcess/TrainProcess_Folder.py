@@ -1,9 +1,9 @@
 import os
 from typing import *
-from .ModelInfo import TrainProcessInfo, ModelInfo, TrainResultInfo
+from .ModelInfo import TrainProcess, ModelInfo, TrainResultInfo
 
 
-class TrainProcess_FolderHandler(TrainProcessInfo):
+class TrainProcess_Folder(TrainProcess):
 
 	def __init__(self):
 		super().__init__()

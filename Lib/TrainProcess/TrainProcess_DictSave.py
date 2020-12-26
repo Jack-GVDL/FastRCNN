@@ -1,11 +1,11 @@
 from typing import *
 import json
 import os
-from Lib.Util.Util_Interface import Interface_DictData
-from .ModelInfo import TrainProcessInfo, ModelInfo
+from .Util_Interface import Interface_DictData
+from .ModelInfo import TrainProcess, ModelInfo
 
 
-class TrainProcess_DictDataSaver(TrainProcessInfo):
+class TrainProcess_DictSave(TrainProcess):
 
 	def __init__(self):
 		super().__init__()

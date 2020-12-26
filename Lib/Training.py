@@ -4,10 +4,8 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from .Util.Util import getCenterBox, getTopLeftBox, normalizeBox
-from .Util.Util_Model import computeBoxIOU, offsetBox, computeConfusionMatrix
-from .Util.Util_Model import convert_BoxIOU_ConfusionMatrix, convert_Total_ConfusionMatrix
-from .TrainProcess.ModelInfo import ModelInfo, TrainResultInfo
+from .Util import *
+from .TrainProcess import *
 from .Dataset_Processed import Dataset_Processed
 
 
@@ -79,7 +77,7 @@ def trainBatch(info: ModelInfo, data_list: List[Any], is_val=False) -> Any:
 		is_val=is_val)
 
 	# append the y_class and y_box
-	result["ROI"]		= normalizeBox(roi_list, (840, 840))
+	result["ROI"]		= scaleBox(roi_list, (1 / 840, 1 / 840))
 	result["YClass"] 	= class_list
 	result["YBox"]		= box_list
 
@@ -179,16 +177,16 @@ def train_(dataset: Dataset_Processed, info: ModelInfo) -> Any:
 	y_box			= result["YBox"]  # in xywh(top-left) format
 
 	# process data returned from training
-	roi_list		= getCenterBox(roi_list)
+	roi_list		= getBox_Center_xywh(roi_list)
 	predict_box		= offsetBox(roi_list, predict_offset)
-	predict_box		= getTopLeftBox(predict_box)  # resultant predict_box is in xywh(top-left) format
+	predict_box		= getBox_TopLeft_xywh(predict_box)  # resultant predict_box is in xywh(top-left) format
 	loss_cur 		= result["LossTotal"] / (len(dataset) / info.batch_size)
 
 	# get model performance
 	confusion_matrix_class	= computeConfusionMatrix(predict_class, y_class, 3)
 	box_iou					= computeBoxIOU(predict_class, predict_box, y_class, y_box)
-	confusion_matrix_box	= convert_BoxIOU_ConfusionMatrix(	box_iou, predict_class, y_class, 3)
-	confusion_matrix_total	= convert_Total_ConfusionMatrix(	box_iou, predict_class, y_class, 3)
+	confusion_matrix_box	= computeConfusionMatrix_BoxIOU(box_iou, predict_class, y_class, 3)
+	confusion_matrix_total	= computeConfusionMatrix_Total(box_iou, predict_class, y_class, 3)
 
 	# save the result
 	result_info_class		= TrainResultInfo(confusion_matrix_class, 	loss_cur)
@@ -222,16 +220,16 @@ def validate_(dataset: Dataset_Processed, info: ModelInfo) -> Any:
 	y_box			= result["YBox"]  # in xywh(top-left) format
 
 	# process data returned from training
-	roi_list		= getCenterBox(roi_list)
+	roi_list		= getBox_Center_xywh(roi_list)
 	predict_box		= offsetBox(roi_list, predict_offset)
-	predict_box		= getTopLeftBox(predict_box)  # resultant predict_box is in xywh(top-left) format
+	predict_box		= getBox_TopLeft_xywh(predict_box)  # resultant predict_box is in xywh(top-left) format
 	loss_cur 		= result["LossTotal"] / (len(dataset) / info.batch_size)
 
 	# get model performance
 	confusion_matrix_class	= computeConfusionMatrix(predict_class, y_class, 3)
 	box_iou					= computeBoxIOU(predict_class, predict_box, y_class, y_box)
-	confusion_matrix_box	= convert_BoxIOU_ConfusionMatrix(	box_iou, predict_class, y_class, 3)
-	confusion_matrix_total	= convert_Total_ConfusionMatrix(	box_iou, predict_class, y_class, 3)
+	confusion_matrix_box	= computeConfusionMatrix_BoxIOU(box_iou, predict_class, y_class, 3)
+	confusion_matrix_total	= computeConfusionMatrix_Total(box_iou, predict_class, y_class, 3)
 
 	# save the result
 	result_info_class		= TrainResultInfo(confusion_matrix_class, 	loss_cur)

@@ -1,7 +1,9 @@
 from typing import *
 import numpy as np
 import torch
-from .Util import clipBox_xywh, computeIOU, clipBox
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from .Util_Box import clipBox_xywh, computeIOU_xywh, normalizeImage
 
 
 # assume: format: predict_box & y_box: xywh
@@ -12,7 +14,7 @@ def computeBoxIOU(predict_class, predict_box, y_class, y_box, theta=0.75):
 	predict_box		= clipBox_xywh(predict_box, (1.0, 1.0))
 	y_box			= clipBox_xywh(y_box, (1.0, 1.0))
 
-	iou             = computeIOU(predict_box, y_box)
+	iou             = computeIOU_xywh(predict_box, y_box)
 	true_box        = (iou >= theta)
 
 	# TODO: move to other place
@@ -65,7 +67,7 @@ def computeConfusionMatrix(predict_class: np.ndarray, y_class: np.ndarray, class
 	return confusion_matrix
 
 
-def convert_BoxIOU_ConfusionMatrix(box_iou: np.ndarray, predict_class: np.ndarray, y_class: np.ndarray, class_size) -> np.ndarray:
+def computeConfusionMatrix_BoxIOU(box_iou: np.ndarray, predict_class: np.ndarray, y_class: np.ndarray, class_size) -> np.ndarray:
 	"""
 	# it is assumed that class==0 is background and has no bounding box
 	# so class 0 will be ignored
@@ -111,7 +113,7 @@ def convert_BoxIOU_ConfusionMatrix(box_iou: np.ndarray, predict_class: np.ndarra
 	return confusion_matrix
 
 
-def convert_Total_ConfusionMatrix(box_iou: np.ndarray, predict_class: np.ndarray, y_class: np.ndarray, class_size) -> np.ndarray:
+def computeConfusionMatrix_Total(box_iou: np.ndarray, predict_class: np.ndarray, y_class: np.ndarray, class_size) -> np.ndarray:
 	# it is assumed that the size of predict_class and y_class are the same
 	n = class_size
 
@@ -154,7 +156,7 @@ def getBoxOffset(box_roi, box_y) -> Any:
 
 # move the box based on the given offset
 def offsetBox(box_list, offset_list) -> Any:
-	# do not do inplace operation unless it is clearly inform to user
+	# TODO: need clear
 	box_list = box_list.copy()
 
 	box_list[:, 0] = box_list[:, 0] + box_list[:, 2] * offset_list[:, 0]
@@ -163,3 +165,53 @@ def offsetBox(box_list, offset_list) -> Any:
 	box_list[:, 3] = box_list[:, 3] * np.exp(offset_list[:, 3])
 
 	return box_list
+
+
+def plotImageBox(image_list: np.ndarray, box_list: List[np.ndarray], label_list: List[str], color_list: List[str]) -> None:
+	# normalize
+	image_list = normalizeImage(image_list)
+
+	# function
+	def draw_box(box_, color):
+		x, y, w, h = box_
+		if x == 0:
+			x = 1
+		if y == 0:
+			y = 1
+
+		plt.gca().add_patch(
+			plt.Rectangle((x, y), w, h, fill=False, edgecolor=color, linewidth=2, alpha=0.5))
+
+	# def random_hex_code() -> str:
+	# 	return "#%02X%02X%02X" % (
+	# 		random.randint(0, 255),
+	# 		random.randint(0, 255),
+	# 		random.randint(0, 255))
+
+	# assign each box type to an unique color
+	# color_list: List[str] = []
+	# for i in range(len(box_list)):
+	# 	color_list.append(random_hex_code())
+
+	# create legend
+	# reference
+	# https://matplotlib.org/3.3.3/tutorials/intermediate/legend_guide.html
+	patch_list: List[Any] = []
+	for i in range(len(box_list)):
+		patch = mpatches.Patch(color=color_list[i], label=label_list[i])
+		patch_list.append(patch)
+
+	# foreach channel, draw image
+	for index_channel in range(image_list.shape[0]):
+		plt.imshow(image_list[index_channel], cmap="gray")
+
+		# foreach type of box
+		for index_type, box_type in enumerate(box_list):
+			for box in box_type:
+				draw_box(box, color_list[index_type])
+
+		# show legend
+		plt.legend(handles=patch_list)
+
+		# it is the function actually make image show on screen
+		plt.show()

@@ -1,8 +1,8 @@
 from typing import *
-from .ModelInfo import TrainProcessInfo, ModelInfo, TrainResultInfo
+from .ModelInfo import TrainProcess, ModelInfo, TrainResultInfo
 
 
-class TrainProcess_Hook(TrainProcessInfo):
+class TrainProcess_Hook(TrainProcess):
 
 	def __init__(self):
 		super().__init__()

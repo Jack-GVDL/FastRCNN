@@ -1,11 +1,11 @@
 from typing import *
 import os
 import matplotlib.pyplot as plt
-from .ModelInfo import TrainProcessInfo, ModelInfo, TrainResultInfo
+from .ModelInfo import TrainProcess, ModelInfo, TrainResultInfo
 from .Util_Plot import plotLoss, plotAccuracy, plotConfusionMatrix
 
 
-class TrainProcess_ResultGraph(TrainProcessInfo):
+class TrainProcess_ResultGraph(TrainProcess):
 
 	def __init__(self):
 		super().__init__()

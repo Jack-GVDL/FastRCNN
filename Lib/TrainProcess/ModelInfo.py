@@ -1,6 +1,6 @@
 from typing import *
 import numpy as np
-from Lib.Util.Util_Interface import Interface_DictData
+from .Util_Interface import Interface_DictData
 
 
 # Data Structure
@@ -103,7 +103,7 @@ class TrainResultInfo:
 		return 2 * (recall * precision) / (recall + precision)
 
 
-class TrainProcessInfo:
+class TrainProcess:
 
 	def __init__(self):
 		super().__init__()
@@ -176,7 +176,7 @@ class ModelInfo(Interface_DictData):
 		self.result_list: List[List[TrainResultInfo]] = []
 
 		# pre/post processing
-		self.process_list: List[TrainProcessInfo] = []
+		self.process_list: List[TrainProcess] = []
 
 		# data will be changed in the operation
 		self.iteration:	int = 0

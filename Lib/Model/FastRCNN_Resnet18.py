@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.models as models
-from Lib.Util.Util import convert_xywh_x1y1x2y2
-from Lib.Util.Util_Interface import Interface_CodePath
+from Lib.Util.Util_Box import convertBox_xywh_x1y1x2y2
+from Lib.TrainProcess.Util_Interface import Interface_CodePath
 
 
 # Data Structure
@@ -104,7 +104,7 @@ class FastRCNN_Resnet18(
 
 		# convert roi from xywh to x1y1x2y2
 		# roi_list = roi_list.clone().detach()
-		roi_list = convert_xywh_x1y1x2y2(roi_list)
+		roi_list = convertBox_xywh_x1y1x2y2(roi_list)
 
 		# x = image_list
 		x = image_list

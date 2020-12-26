@@ -2,7 +2,7 @@ from typing import *
 import numpy as np
 import torch
 import torch.nn as nn
-from Lib.Util.Util import getCenterBox, getTopLeftBox, scaleBox_xywh
+from Lib.Util.Util_Box import getBox_Center_xywh, getBox_TopLeft_xywh, scaleBox
 from Lib.Util.Util_Model import offsetBox
 from .Model.FastRCNN_Alexnet import FastRCNN_Alexnet
 
@@ -15,7 +15,6 @@ def runRegionCapture(
 	:param model:
 	:param image_list:	[size_channel, H, W]
 	:param roi_list: 	[size_box, 4]
-	:param size_grid:	[grid_w, grid_h]
 	:return: 			(mod_box, sev_box)
 	"""
 	# get image size
@@ -70,13 +69,15 @@ def runRegionCapture(
 	# generate list of bounding box [K, 4] of
 	# - MOD
 	# - SEV
+
 	# compute new roi
-	roi_list			= scaleBox_xywh(roi_list.astype(np.float), (1 / image_w, 1 / image_h))  # roi is not normalized, need normalization
-	roi_list 		= getCenterBox(roi_list)
+	# roi is not normalized, need normalization
+	roi_list	= scaleBox(roi_list.astype(np.float), (1 / image_w, 1 / image_h), is_inplace=True)
+	roi_list 	= getBox_Center_xywh(roi_list, is_inplace=True)
 
 	predict_box = offsetBox(roi_list, predict_offset)
-	predict_box = getTopLeftBox(predict_box)
-	predict_box = scaleBox_xywh(predict_box, (840, 840))
+	predict_box = getBox_TopLeft_xywh(predict_box, is_inplace=True)
+	predict_box = scaleBox(predict_box, (840, 840), is_inplace=True)
 
 	# split the list into MOD and SEV
 	box_mod_index = (predict_class == 1) * 1

@@ -5,10 +5,8 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
-
+from .Util import *
 from .Dataset_Image import Dataset_Image
-from Lib.Util.Util import normalizeImage, getCenterBox, normalizeBox
-from Lib.Util.Util_Model import getBoxOffset
 
 
 # Data Structure
@@ -91,11 +89,11 @@ class Dataset_Processed(Dataset):
 
 	# TODO: dict can use int as key, to boost performance, change str to int
 	class Label:
-		IMAGE_LIST	= 0
-		ROI_LIST	= 1
-		CLASS_LIST	= 2
-		OFFSET_LIST	= 3
-		BOX_LIST	= 4
+		IMAGE_LIST:		int = 0
+		ROI_LIST:		int	= 1
+		CLASS_LIST:		int	= 2
+		OFFSET_LIST:	int	= 3
+		BOX_LIST:		int	= 4
 
 	def __init__(self, config: Config_Processed, data_path: str = ""):
 		super().__init__()
@@ -154,7 +152,7 @@ class Dataset_Processed(Dataset):
 
 		# ----- offset -----
 		box_list	= np.array(data[Config_Processed.Label.BOX_LIST], dtype=np.int32)
-		box_list	= normalizeBox(box_list.astype(np.float32), (840, 840))
+		box_list	= scaleBox(box_list.astype(np.float32), (1 / 840, 1 / 840))
 
 		# get and divide positive and negative
 		index_positive = np.where(class_list != 0)[0]
@@ -179,11 +177,11 @@ class Dataset_Processed(Dataset):
 		box_list	= np.concatenate((box_positive, box_negative))
 
 		# get normalized roi
-		temp_roi = normalizeBox(roi_list.astype(np.float32), (840, 840))
+		temp_roi = scaleBox(roi_list.astype(np.float32), (1 / 840, 1 / 840))
 
 		# normalize and get offset
-		temp_roi 	= getCenterBox(temp_roi)
-		temp_box 	= getCenterBox(box_list.copy())
+		temp_roi 	= getBox_Center_xywh(temp_roi)
+		temp_box 	= getBox_Center_xywh(box_list.copy())
 		offset_list = getBoxOffset(temp_roi, temp_box)
 
 		# change to dict

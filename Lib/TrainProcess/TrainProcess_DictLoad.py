@@ -1,10 +1,10 @@
 from typing import *
 import json
-from Lib.Util.Util_Interface import Interface_DictData
-from .ModelInfo import TrainProcessInfo, ModelInfo
+from .Util_Interface import Interface_DictData
+from .ModelInfo import TrainProcess, ModelInfo
 
 
-class TrainProcess_DictDataLoader(TrainProcessInfo):
+class TrainProcess_DictLoad(TrainProcess):
 
 	def __init__(self):
 		super().__init__()

@@ -1,10 +1,10 @@
 from typing import *
 import os
 import torch
-from .ModelInfo import TrainProcessInfo, ModelInfo, TrainResultInfo
+from .ModelInfo import TrainProcess, ModelInfo, TrainResultInfo
 
 
-class TrainProcess_ResultRecord(TrainProcessInfo):
+class TrainProcess_ResultRecord(TrainProcess):
 
 	def __init__(self):
 		super().__init__()

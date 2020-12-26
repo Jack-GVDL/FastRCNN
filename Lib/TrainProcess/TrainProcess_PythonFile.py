@@ -1,11 +1,11 @@
 from typing import *
 import os
 import shutil
-from Lib.Util.Util_Interface import Interface_CodePath
-from .ModelInfo import TrainProcessInfo, ModelInfo
+from .Util_Interface import Interface_CodePath
+from .ModelInfo import TrainProcess, ModelInfo
 
 
-class TrainProcess_CodeFileSaver(TrainProcessInfo):
+class TrainProcess_PythonFile(TrainProcess):
 
 	def __init__(self):
 		super().__init__()

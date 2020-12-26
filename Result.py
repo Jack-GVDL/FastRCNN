@@ -6,7 +6,7 @@ from Lib import *
 path_model_info: str = "./Result/Result_20201224192614/ModelInfo.json"
 
 # ----- get model info -----
-process_dict_data_loader = TrainProcess_DictDataLoader()
+process_dict_data_loader = TrainProcess_DictLoad()
 info = ModelInfo()
 
 process_dict_data_loader.add(info, path_model_info)

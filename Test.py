@@ -3,8 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch.nn as nn
 from Lib import *
-from Lib.Util import getCenterBox, convert_xywh_x1y1x2y2, getTopLeftBox, scaleBox_xywh, \
-	convert_x1y1x2y2_xywh, clipBox
 
 
 # ---- check environment -----
@@ -58,8 +56,8 @@ for i in range(len(dataset_test)):
 	size_grid = (20, 20)
 
 	roi = runSelectiveSearch(data_image, 10, size_grid)
-	roi = convert_x1y1x2y2_xywh(roi)
-	roi = clipBox(roi, (839, 839))
+	roi = convertBox_x1y1x2y2_xywh(roi, is_inplace=True)
+	roi = clipBox_xywh(roi, (839, 839), is_inplace=True)
 
 	# roi = []
 	# for y in range(10):
@@ -72,10 +70,11 @@ for i in range(len(dataset_test)):
 
 	# box ground truth
 	box_ground = data[Dataset_Processed.Label.BOX_LIST]
-	box_ground = scaleBox_xywh(box_ground, (840, 840))
+	box_ground = scaleBox(box_ground, (840, 840), is_inplace=True)
 
 	# plot graph
-	plotImageBox(data_image[0:1, :, :], [box_ground, box_mod, box_sev], ["Ground", "MOD", "SEV"], ["green", "orange", "red"])
+	plotImageBox(
+		data_image[0:1, :, :], [box_ground, box_mod, box_sev], ["Ground", "MOD", "SEV"], ["green", "orange", "red"])
 
 	# breakpoint
 	breakpoint()

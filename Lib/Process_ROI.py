@@ -2,8 +2,9 @@ from typing import *
 from datetime import datetime
 import numpy as np
 from tqdm import trange
-from Lib.Util.Util import computeIOU, clipBox, convert_x1y1x2y2_xywh, convert_xywh_x1y1x2y2
+from .Util import *
 from Lib.Dataset_Processed import Config_Processed
+
 
 # Function
 # result == 0, unclassified
@@ -21,7 +22,7 @@ def labelIOU(
 	# foreach ground truth box
 	# compute IOU
 	for i in range(ground_truth.shape[0]):
-		temp = computeIOU(box_list, np.tile(ground_truth[i], (size_box, 1)))
+		temp = computeIOU_xywh(box_list, np.tile(ground_truth[i], (size_box, 1)))
 
 		result_positive += ((temp > positive[0]) & (temp < positive[1])) * 1
 		result_negative += ((temp > negative[0]) & (temp < negative[1])) * 1
@@ -46,7 +47,7 @@ def labelDimensionLimit_xywh(boxes, size):
 	return (temp_w >= size[0]) & (temp_h >= size[1])
 
 
-def generateBox(size) -> np.ndarray:
+def generateBox_x1y1x2y2(size) -> np.ndarray:
 	# get a set of bounding box (in form of x1, y1, x2, y2)
 	box_list = np.random.randint(0, high=size, size=(64, 4))
 
@@ -83,7 +84,8 @@ def generatePositive(data, size, threshold: Tuple[float, float] = 0.7) -> Dict:
 		count_roi = 0
 		while count < size and count_roi < roi_per_box:
 			box 			= box_list[index_box]
-			box_x1y1x2y2	= convert_xywh_x1y1x2y2(box.copy().reshape((-1, 4)))
+			box				= box.reshape((1, 4))
+			box_x1y1x2y2	= convertBox_xywh_x1y1x2y2(box, is_inplace=False)
 
 			# ----- generate bounding box -----'
 			# get bounding box width and height
@@ -103,16 +105,16 @@ def generatePositive(data, size, threshold: Tuple[float, float] = 0.7) -> Dict:
 			offset_list = np.concatenate((offset_list_x1, offset_list_y1, offset_list_x2, offset_list_y2), axis=1)
 
 			roi_list	= np.tile(box_x1y1x2y2, (roi_per_box, 1)) + offset_list
-			roi_list	= clipBox(roi_list, (840, 840))
-			roi_list	= convert_x1y1x2y2_xywh(roi_list)
+			roi_list	= clipBox_x1y1x2y2(roi_list, (839, 839), is_inplace=True)
+			roi_list	= convertBox_x1y1x2y2_xywh(roi_list, is_inplace=True)
 
 			# ----- labeling -----
 			# currently use NOT strict rule
 			label_iou = labelIOU(box_list, roi_list, positive=threshold)
 
 			# check if width and height larger than a specific size
-			# currently the dimension of box should be larger than W=13, H=13
-			label_area = labelDimensionLimit_xywh(roi_list, (13, 13))
+			# currently the dimension of box should be larger than W=10, H=10
+			label_area = labelDimensionLimit_xywh(roi_list, (10, 10))
 
 			# in most of the case
 			# as the ground truth bounding box is overlapping
@@ -131,17 +133,17 @@ def generatePositive(data, size, threshold: Tuple[float, float] = 0.7) -> Dict:
 					continue
 
 				# add to result
-				result_roi = np.concatenate((	result_roi, 	roi_list[i].reshape((1, 4))), 		axis=0)
-				result_class = np.concatenate((	result_class, 	class_list[index_box].reshape(1,)), axis=0)
-				result_box = np.concatenate((	result_box, 	box.copy().reshape((1, 4))), 		axis=0)
+				result_roi 		= np.concatenate((	result_roi, 	roi_list[i].reshape((1, 4))), 		axis=0)
+				result_class 	= np.concatenate((	result_class, 	class_list[index_box].reshape(1,)), axis=0)
+				result_box 		= np.concatenate((	result_box, 	box.copy()), 						axis=0)
 
 				count_roi 	+= 1
 				count 		+= 1
 
 	return {
-		Config_Processed.Label.ROI_LIST: 	result_roi,
+		Config_Processed.Label.ROI_LIST: 	result_roi.astype(np.int),
 		Config_Processed.Label.CLASS_LIST: 	result_class,
-		Config_Processed.Label.BOX_LIST: 	result_box
+		Config_Processed.Label.BOX_LIST: 	result_box.astype(np.int)
 	}
 
 
@@ -155,8 +157,8 @@ def generateNegative(data, size, threshold: Tuple[float, float] = 0.3) -> Dict:
 	# generate negative, bounding box with iou in [0.1, 0.5)
 	while count < size:
 		# ----- generate bounding box -----
-		roi_list = generateBox(840)
-		roi_list = convert_x1y1x2y2_xywh(roi_list)
+		roi_list = generateBox_x1y1x2y2(840)
+		roi_list = convertBox_x1y1x2y2_xywh(roi_list, is_inplace=True)
 
 		# ----- labeling -----
 		# get / label IOU
@@ -182,8 +184,8 @@ def generateNegative(data, size, threshold: Tuple[float, float] = 0.3) -> Dict:
 
 	return {
 		Config_Processed.Label.ROI_LIST: 	result,
-		Config_Processed.Label.CLASS_LIST: 	np.zeros((result.shape[0],), dtype=int),
-		Config_Processed.Label.BOX_LIST: 	np.ones((result.shape[0], 4), dtype=int)
+		Config_Processed.Label.CLASS_LIST: 	np.zeros((result.shape[0],),	dtype=int),
+		Config_Processed.Label.BOX_LIST: 	np.ones((result.shape[0], 4),	dtype=int)
 	}
 
 
@@ -262,18 +264,19 @@ if __name__ == '__main__':
 	now = datetime.now()
 	current_time = now.strftime("%Y%m%d%H%M%S")
 
-	iou_positive = (0.75, 1.0)
-	iou_negative = (0.1, 0.75)
-	size_positive = 32
-	size_negative = 32
+	iou_positive_ = (0.75, 1.0)
+	iou_negative_ = (0.1, 0.75)
+	size_positive_ = 32
+	size_negative_ = 32
 
-	file_src = "../Data/train/DataRaw.json"
+	# file_src = "../Data/train/DataRaw.json"
 	file_src = "../Data/val/Data.json"
 
 	# file_dst = f"../Data/train/Data_" +\
 	file_dst = f"../Data/val/Data_" + \
-				f"{current_time}_{iou_positive[0]}_{iou_positive[1]}_{iou_negative[0]}_{iou_negative[1]}_" +\
-				f"{size_positive}_{size_negative}.json"
+				f"{current_time}_" + \
+				f"{iou_positive_[0]}_{iou_positive_[1]}_{iou_negative_[0]}_{iou_negative_[1]}_" +\
+				f"{size_positive_}_{size_negative_}.json"
 
 	# get dataset
 	config_src = Config_Processed()
@@ -283,14 +286,7 @@ if __name__ == '__main__':
 	# generate ROI
 	generateROI(
 		file_dst, config_src,
-		positive=iou_positive, negative=iou_negative,
-		size_positive=size_positive, size_negative=size_negative)
+		positive=iou_positive_, negative=iou_negative_,
+		size_positive=size_positive_, size_negative=size_negative_)
 
 	print(f"Generate file: {file_dst}")
-
-	# show result
-	# config_dst = Config_Processed()
-	# config_dst.file = file_dst
-	# config_dst.load()
-	#
-	# dataset = Dataset_Processed(config_dst, data_path="./Data/test")

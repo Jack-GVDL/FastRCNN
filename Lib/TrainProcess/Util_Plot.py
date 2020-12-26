@@ -4,9 +4,7 @@ import numpy as np
 import seaborn as sn
 import pandas as pd
 import matplotlib.pylab as plt
-import matplotlib.patches as mpatches
-from Lib.TrainProcess.ModelInfo import TrainResultInfo
-from Lib.Util.Util import normalizeImage
+from .ModelInfo import TrainResultInfo
 
 
 # plot confusion matrix
@@ -88,57 +86,6 @@ def plotLoss(info_list: List[List[TrainResultInfo]], label_info: List[str], is_s
 
 	# show if needed
 	if is_show:
-		plt.show()
-
-
-# TODO: move to other place
-def plotImageBox(image_list: np.ndarray, box_list: List[np.ndarray], label_list: List[str], color_list: List[str]) -> None:
-	# normalize
-	image_list = normalizeImage(image_list)
-
-	# function
-	def draw_box(box_, color):
-		x, y, w, h = box_
-		if x == 0:
-			x = 1
-		if y == 0:
-			y = 1
-
-		plt.gca().add_patch(
-			plt.Rectangle((x, y), w, h, fill=False, edgecolor=color, linewidth=2, alpha=0.5))
-
-	# def random_hex_code() -> str:
-	# 	return "#%02X%02X%02X" % (
-	# 		random.randint(0, 255),
-	# 		random.randint(0, 255),
-	# 		random.randint(0, 255))
-
-	# assign each box type to an unique color
-	# color_list: List[str] = []
-	# for i in range(len(box_list)):
-	# 	color_list.append(random_hex_code())
-
-	# create legend
-	# reference
-	# https://matplotlib.org/3.3.3/tutorials/intermediate/legend_guide.html
-	patch_list: List[Any] = []
-	for i in range(len(box_list)):
-		patch = mpatches.Patch(color=color_list[i], label=label_list[i])
-		patch_list.append(patch)
-
-	# foreach channel, draw image
-	for index_channel in range(image_list.shape[0]):
-		plt.imshow(image_list[index_channel], cmap="gray")
-
-		# foreach type of box
-		for index_type, box_type in enumerate(box_list):
-			for box in box_type:
-				draw_box(box, color_list[index_type])
-
-		# show legend
-		plt.legend(handles=patch_list)
-
-		# it is the function actually make image show on screen
 		plt.show()
 
 

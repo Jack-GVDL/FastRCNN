@@ -94,10 +94,10 @@ info.save_path 		= "./Result"
 info.save_folder 	= f"Result_{current_time}"
 
 process_hookResult		= TrainProcess_Hook()
-process_folderHandler	= TrainProcess_FolderHandler()
+process_folderHandler	= TrainProcess_Folder()
 process_resultRecord	= TrainProcess_ResultRecord()
-process_codeFileSaver	= TrainProcess_CodeFileSaver()
-process_dictDataSaver	= TrainProcess_DictDataSaver()
+process_codeFileSaver	= TrainProcess_PythonFile()
+process_dictDataSaver	= TrainProcess_DictSave()
 process_resultGraph		= TrainProcess_ResultGraph()
 
 process_folderHandler.stage = [ModelInfo.Stage.TRAIN_END]

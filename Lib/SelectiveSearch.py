@@ -2,8 +2,8 @@ import time
 from typing import *
 import numpy as np
 from .Dataset_Processed import Dataset_Processed, Config_Processed
-from Lib.Util.Util import convert_x1y1x2y2_xywh, normalizeBox, computeIOU, scaleBox_x1y1x2y2
-from Lib.TrainProcess.Util_Plot import plotImageBox
+from .Util import *
+from .TrainProcess import *
 
 
 # Function
@@ -200,7 +200,7 @@ def runSelectiveSearch(image: np.ndarray, size_bucket: int, size_grid: Tuple[int
 	result[:, 2] += 1
 	result[:, 3] += 1
 
-	scaleBox_x1y1x2y2(result, (grid_w, grid_h))
+	result = scaleBox(result, (grid_w, grid_h))
 
 	return result
 
@@ -241,18 +241,18 @@ if __name__ == '__main__':
 		result_plot[:, 3] -= 5
 
 		# result_plot += np.array([[0, 0, grid_w, grid_h]])
-		result_plot = convert_x1y1x2y2_xywh(result_plot)
+		result_plot = convertBox_x1y1x2y2_xywh(result_plot)
 
 		plotImageBox(image_, [roi, result_plot], ["Ground", "ROI"], ["green", "red"])
 
 		# ----- check IOU -----
 		result_ = np.unique(result_, axis=0)
-		result_ = convert_x1y1x2y2_xywh(result_)
+		result_ = convertBox_x1y1x2y2_xywh(result_)
 		result_	= result_.astype(np.float)
-		result_ = normalizeBox(result_, (840, 840))
+		result_ = scaleBox(result_, (1 / 840, 1 / 840))
 
 		for i in range(box.shape[0]):
-			iou = computeIOU(result_, np.tile(box[i], (result_.shape[0], 1)))
+			iou = computeIOU_xywh(result_, np.tile(box[i], (result_.shape[0], 1)))
 
 			print(np.nonzero(iou > 0.1))
 			print(iou[np.nonzero(iou > 0.1)])

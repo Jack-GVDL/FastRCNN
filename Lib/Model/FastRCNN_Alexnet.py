@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.models as models
-from Lib.Util.Util import convert_xywh_x1y1x2y2
-from Lib.Util.Util_Interface import Interface_CodePath
+from Lib.Util.Util_Box import convertBox_xywh_x1y1x2y2
+from Lib.TrainProcess.Util_Interface import Interface_CodePath
 
 
 # Data Structure
@@ -24,8 +24,8 @@ class FastRCNN_Alexnet(
 		super().__init__()
 
 		# hyper-parameter / constant
-		# pool_size_roi = (13, 13)
-		pool_size_roi = (7, 7)
+		pool_size_roi = (16, 16)
+		# pool_size_roi = (7, 7)
 
 		# alexnet input channel number is 3
 		# but OUR image channel number is 4
@@ -38,7 +38,7 @@ class FastRCNN_Alexnet(
 		# ----- pretrained AlexNet -----
 		# remove the last layer in the features
 		alexnet = models.alexnet(pretrained=True)
-		self.alexnet = nn.Sequential(*list(alexnet.features.children())[:-1])
+		self.alexnet_seq = nn.Sequential(*list(alexnet.features.children())[:-1])
 
 		# ----- ROI Pooling Layer -----
 		# max-pooling 130*130 ROI to fixed size output grid cell
@@ -92,7 +92,7 @@ class FastRCNN_Alexnet(
 		# ----- Layer -----
 		self.layer:	Dict = {
 			self.Layer.INPUT_CONV:	self.input_conv,
-			self.Layer.ALEXNET:		self.alexnet,
+			self.Layer.ALEXNET:		self.alexnet_seq,
 			self.Layer.POOL:		self.roi_pool,
 			self.Layer.FEATURE:		self.feature,
 			self.Layer.SOFTMAX:		self.cls_score,
@@ -111,7 +111,7 @@ class FastRCNN_Alexnet(
 		size_sample = roi_list.shape[0]
 
 		# convert ROI from xywh to x1y1x2y2
-		roi_list = convert_xywh_x1y1x2y2(roi_list)
+		roi_list = convertBox_xywh_x1y1x2y2(roi_list)
 
 		# x = image_list
 		x = image_list
@@ -120,7 +120,7 @@ class FastRCNN_Alexnet(
 		x = self.input_conv(x)
 
 		# alexnet
-		x = self.alexnet(x)
+		x = self.alexnet_seq(x)
 
 		# roi pooling
 		# concatenate roi_index_list
