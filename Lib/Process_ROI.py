@@ -2,7 +2,7 @@ from typing import *
 from datetime import datetime
 import numpy as np
 from tqdm import trange
-from Lib.Util import computeIOU, clipBox, convert_x1y1x2y2_xywh, convert_xywh_x1y1x2y2
+from Lib.Util.Util import computeIOU, clipBox, convert_x1y1x2y2_xywh, convert_xywh_x1y1x2y2
 from Lib.Dataset_Processed import Config_Processed
 
 # Function
@@ -85,10 +85,23 @@ def generatePositive(data, size, threshold: Tuple[float, float] = 0.7) -> Dict:
 			box 			= box_list[index_box]
 			box_x1y1x2y2	= convert_xywh_x1y1x2y2(box.copy().reshape((-1, 4)))
 
-			# ----- generate bounding box -----
+			# ----- generate bounding box -----'
+			# get bounding box width and height
+			box_w = box[2]
+			box_h = box[3]
+
+			box_w = box_w // 4
+			box_h = box_h // 4
+
 			# generate new roi
 			# currently max offset in x and y axis is 50
-			offset_list = np.random.randint(-25, high=25, size=(roi_per_box, 4))
+			offset_list_x1 = np.random.randint(-box_w, high=box_w, size=(roi_per_box, 1))
+			offset_list_y1 = np.random.randint(-box_h, high=box_h, size=(roi_per_box, 1))
+			offset_list_x2 = np.random.randint(-box_w, high=box_w, size=(roi_per_box, 1))
+			offset_list_y2 = np.random.randint(-box_h, high=box_h, size=(roi_per_box, 1))
+
+			offset_list = np.concatenate((offset_list_x1, offset_list_y1, offset_list_x2, offset_list_y2), axis=1)
+
 			roi_list	= np.tile(box_x1y1x2y2, (roi_per_box, 1)) + offset_list
 			roi_list	= clipBox(roi_list, (840, 840))
 			roi_list	= convert_x1y1x2y2_xywh(roi_list)
@@ -249,14 +262,16 @@ if __name__ == '__main__':
 	now = datetime.now()
 	current_time = now.strftime("%Y%m%d%H%M%S")
 
-	iou_positive = (0.5, 1.0)
-	iou_negative = (0.1, 0.5)
-	size_positive = 160
-	size_negative = 480
+	iou_positive = (0.75, 1.0)
+	iou_negative = (0.1, 0.75)
+	size_positive = 32
+	size_negative = 32
 
 	file_src = "../Data/train/DataRaw.json"
-	# file_src = "../Data/test/Data.json"
-	file_dst = f"../Data/train/Data_" +\
+	file_src = "../Data/val/Data.json"
+
+	# file_dst = f"../Data/train/Data_" +\
+	file_dst = f"../Data/val/Data_" + \
 				f"{current_time}_{iou_positive[0]}_{iou_positive[1]}_{iou_negative[0]}_{iou_negative[1]}_" +\
 				f"{size_positive}_{size_negative}.json"
 
@@ -267,7 +282,9 @@ if __name__ == '__main__':
 
 	# generate ROI
 	generateROI(
-		file_dst, config_src, positive=iou_positive, negative=iou_negative, size_positive=16, size_negative=size_negative)
+		file_dst, config_src,
+		positive=iou_positive, negative=iou_negative,
+		size_positive=size_positive, size_negative=size_negative)
 
 	print(f"Generate file: {file_dst}")
 

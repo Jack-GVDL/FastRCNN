@@ -1,15 +1,13 @@
-from datetime import datetime
 from typing import *
-import time
 
 import numpy as np
 import torch
-import torch.optim as optim
 from tqdm import tqdm
 
-from .Util import getCenterBox, getTopLeftBox, normalizeBox
-from .Util_Model import computeBoxIOU, offsetBox, computeConfusionMatrix, convert_BoxIOU_ConfusionMatrix
-from .ModelInfo import ModelInfo, TrainResultInfo
+from .Util.Util import getCenterBox, getTopLeftBox, normalizeBox
+from .Util.Util_Model import computeBoxIOU, offsetBox, computeConfusionMatrix
+from .Util.Util_Model import convert_BoxIOU_ConfusionMatrix, convert_Total_ConfusionMatrix
+from .TrainProcess.ModelInfo import ModelInfo, TrainResultInfo
 from .Dataset_Processed import Dataset_Processed
 
 
@@ -161,6 +159,94 @@ def trainEpoch(dataset, info: ModelInfo, is_val=False, is_acquire_result=False) 
 	return result_epoch
 
 
+def train_(dataset: Dataset_Processed, info: ModelInfo) -> Any:
+	# ----- train start -----
+	info.model.train(True)
+
+	# signal
+	info.executeProcess(ModelInfo.Stage.ITERATION_TRAIN_START, {})
+
+	# ----- train -----
+	result = trainEpoch(dataset, info, is_val=False, is_acquire_result=True)
+	if info.scheduler is not None:
+		info.scheduler.step()
+
+	# get data returned from training
+	roi_list 		= result["ROI"]  # in xywh(top-left) format
+	predict_offset	= result["PredictOffset"]
+	predict_class	= result["PredictClass"]
+	y_class			= result["YClass"]
+	y_box			= result["YBox"]  # in xywh(top-left) format
+
+	# process data returned from training
+	roi_list		= getCenterBox(roi_list)
+	predict_box		= offsetBox(roi_list, predict_offset)
+	predict_box		= getTopLeftBox(predict_box)  # resultant predict_box is in xywh(top-left) format
+	loss_cur 		= result["LossTotal"] / (len(dataset) / info.batch_size)
+
+	# get model performance
+	confusion_matrix_class	= computeConfusionMatrix(predict_class, y_class, 3)
+	box_iou					= computeBoxIOU(predict_class, predict_box, y_class, y_box)
+	confusion_matrix_box	= convert_BoxIOU_ConfusionMatrix(	box_iou, predict_class, y_class, 3)
+	confusion_matrix_total	= convert_Total_ConfusionMatrix(	box_iou, predict_class, y_class, 3)
+
+	# save the result
+	result_info_class		= TrainResultInfo(confusion_matrix_class, 	loss_cur)
+	result_info_box			= TrainResultInfo(confusion_matrix_box,		loss_cur)
+	result_info_total		= TrainResultInfo(confusion_matrix_total,	loss_cur)
+
+	info.result_list[-1].append(result_info_class)
+	info.result_list[-1].append(result_info_box)
+	info.result_list[-1].append(result_info_total)
+
+	# ----- train end -----
+	# signal
+	info.executeProcess(ModelInfo.Stage.ITERATION_TRAIN_END, {})
+
+
+def validate_(dataset: Dataset_Processed, info: ModelInfo) -> Any:
+	# ----- validate start -----
+	info.model.train(False)
+
+	# signal
+	info.executeProcess(ModelInfo.Stage.ITERATION_VAL_START, {})
+
+	# ----- validate -----
+	result = trainEpoch(dataset, info, is_val=True, is_acquire_result=True)
+
+	# get data returned from training
+	roi_list 		= result["ROI"]  # in xywh(top-left) format
+	predict_offset	= result["PredictOffset"]
+	predict_class	= result["PredictClass"]
+	y_class			= result["YClass"]
+	y_box			= result["YBox"]  # in xywh(top-left) format
+
+	# process data returned from training
+	roi_list		= getCenterBox(roi_list)
+	predict_box		= offsetBox(roi_list, predict_offset)
+	predict_box		= getTopLeftBox(predict_box)  # resultant predict_box is in xywh(top-left) format
+	loss_cur 		= result["LossTotal"] / (len(dataset) / info.batch_size)
+
+	# get model performance
+	confusion_matrix_class	= computeConfusionMatrix(predict_class, y_class, 3)
+	box_iou					= computeBoxIOU(predict_class, predict_box, y_class, y_box)
+	confusion_matrix_box	= convert_BoxIOU_ConfusionMatrix(	box_iou, predict_class, y_class, 3)
+	confusion_matrix_total	= convert_Total_ConfusionMatrix(	box_iou, predict_class, y_class, 3)
+
+	# save the result
+	result_info_class		= TrainResultInfo(confusion_matrix_class, 	loss_cur)
+	result_info_box			= TrainResultInfo(confusion_matrix_box,		loss_cur)
+	result_info_total		= TrainResultInfo(confusion_matrix_total,	loss_cur)
+
+	info.result_list[-1].append(result_info_class)
+	info.result_list[-1].append(result_info_box)
+	info.result_list[-1].append(result_info_total)
+
+	# ----- validate end -----
+	# signal
+	info.executeProcess(ModelInfo.Stage.ITERATION_VAL_END, {})
+
+
 def train(dataset_list: Dict, info: ModelInfo) -> Any:
 	# parameter
 	epoch = info.epoch
@@ -173,63 +259,14 @@ def train(dataset_list: Dict, info: ModelInfo) -> Any:
 
 	# for i in tqdm(range(epoch), position=0, leave=True):
 	for i in range(epoch):
+		# result
+		info.result_list.append([])
 
-		# ----- train start -----
-		info.model.train(True)
-		dataset_train_ = dataset_list["Train"]
+		# train
+		train_(dataset_list["Train"], info)
 
-		# signal
-		info.executeProcess(ModelInfo.Stage.ITERATION_TRAIN_START, {})
-
-		# ----- train -----
-		trainEpoch(dataset_train_, info, is_val=False)
-
-		if info.scheduler is not None:
-			info.scheduler.step()
-
-		# ----- train end -----
-		# signal
-		info.executeProcess(ModelInfo.Stage.ITERATION_TRAIN_END, {})
-
-		# ----- test start -----
-		info.model.train(False)
-		dataset_test_ = dataset_list["Test"]
-
-		# signal
-		info.executeProcess(ModelInfo.Stage.ITERATION_TEST_START, {})
-
-		# ----- test -----
-		result = trainEpoch(dataset_test_, info, is_val=True, is_acquire_result=True)
-
-		# get data returned from training
-		roi_list 		= result["ROI"]  # in xywh(top-left) format
-		predict_offset	= result["PredictOffset"]
-		predict_class	= result["PredictClass"]
-		y_class			= result["YClass"]
-		y_box			= result["YBox"]  # in xywh(top-left) format
-
-		# process data returned from training
-		roi_list		= getCenterBox(roi_list)
-		predict_box		= offsetBox(roi_list, predict_offset)
-		predict_box		= getTopLeftBox(predict_box)  # resultant predict_box is in xywh(top-left) format
-
-		loss_cur 		= result["LossTotal"] / (len(dataset_test_) / info.batch_size)
-
-		# get model performance
-		confusion_matrix_class	= computeConfusionMatrix(predict_class, y_class, 3)
-		box_iou					= computeBoxIOU(predict_class, predict_box, y_class, y_box)
-		confusion_matrix_box	= convert_BoxIOU_ConfusionMatrix(box_iou, predict_class, y_class, 3)
-
-		# save the result
-		result_info_class		= TrainResultInfo(confusion_matrix_class, 	loss_cur)
-		result_info_box			= TrainResultInfo(confusion_matrix_box,		loss_cur)
-
-		result_list: List[TrainResultInfo] = [result_info_class, result_info_box]
-		info.result_list.append(result_list)
-
-		# ----- test end -----
-		# signal
-		info.executeProcess(ModelInfo.Stage.ITERATION_TEST_END, {})
+		# val
+		validate_(dataset_list["Val"], info)
 
 		# ----- iteration end -----
 		info.iteration += 1

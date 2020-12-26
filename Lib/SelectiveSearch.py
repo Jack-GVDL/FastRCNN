@@ -1,10 +1,9 @@
 import time
 from typing import *
 import numpy as np
-import cmath
-import math
-from Lib.Dataset_Processed import Dataset_Processed, Config_Processed
-from Lib.Util import normalizeImage, plotImage, convert_x1y1x2y2_xywh, normalizeBox, computeIOU
+from .Dataset_Processed import Dataset_Processed, Config_Processed
+from Lib.Util.Util import convert_x1y1x2y2_xywh, normalizeBox, computeIOU, scaleBox_x1y1x2y2
+from Lib.TrainProcess.Util_Plot import plotImageBox
 
 
 # Function
@@ -197,6 +196,12 @@ def runSelectiveSearch(image: np.ndarray, size_bucket: int, size_grid: Tuple[int
 		label_dis	= label_mask_2 * (label_1 - label_2)
 		label		+= label_dis
 
+	# rescaling to image size (H, W)
+	result[:, 2] += 1
+	result[:, 3] += 1
+
+	scaleBox_x1y1x2y2(result, (grid_w, grid_h))
+
 	return result
 
 
@@ -217,7 +222,7 @@ if __name__ == '__main__':
 		# normalize image
 		# image_ = normalizeImage(image_)
 
-		grid_size = (10, 10)
+		grid_size = (40, 40)
 
 		# ----- selective search -----
 		start_time = time.time()
@@ -225,21 +230,20 @@ if __name__ == '__main__':
 		print(f"Runtime: {time.time() - start_time}")
 
 		# ----- plot image -----
-		grid_w = 840 // grid_size[0]
-		grid_h = 840 // grid_size[1]
+		# grid_w = 840 // grid_size[0]
+		# grid_h = 840 // grid_size[1]
+		# result_ *= np.array([[grid_w, grid_h, grid_w, grid_h]])
 
-		result_ *= np.array([[grid_w, grid_h, grid_w, grid_h]])
 		result_plot = result_.copy()
-
 		result_plot[:, 0] += 5
 		result_plot[:, 1] += 5
 		result_plot[:, 2] -= 5
 		result_plot[:, 3] -= 5
 
-		result_plot += np.array([[0, 0, grid_w, grid_h]])
+		# result_plot += np.array([[0, 0, grid_w, grid_h]])
 		result_plot = convert_x1y1x2y2_xywh(result_plot)
 
-		plotImage(image_, np.zeros((0, 4)), roi, result_plot)
+		plotImageBox(image_, [roi, result_plot], ["Ground", "ROI"], ["green", "red"])
 
 		# ----- check IOU -----
 		result_ = np.unique(result_, axis=0)
