@@ -14,13 +14,20 @@ class TrainProcess_DictSave(TrainProcess):
 		self.save_list:	List[Tuple[Interface_DictData, str]] = []
 
 		# operation
-		# default stage (can be changed by user)
-		self.stage.append(ModelInfo.Stage.TRAIN_END)
+		# ...
 
 	def __del__(self):
 		return
 
 	# Operation
+	def setData(self, data: Dict) -> None:
+		self.save_list = self._getDataFromDict_(data, "save_list", self.save_list)
+
+	def getData(self) -> Dict:
+		return {
+			"save_list": self.save_list
+		}
+
 	def add(self, obj: Interface_DictData, filename: str) -> bool:
 		self.save_list.append((obj, filename))
 		return True

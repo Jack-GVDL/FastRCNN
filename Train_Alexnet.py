@@ -18,7 +18,7 @@ print(f"Device memory:  {torch.cuda.get_device_properties(env_device).total_memo
 
 # ----- model -----
 info = ModelInfo()
-info.epoch 			= 3
+info.epoch 			= 6
 info.batch_size 	= 1
 info.learning_rate	= 5e-4
 info.train_parameter["Momentum"] = 0.9
@@ -93,41 +93,57 @@ current_time 	= now.strftime("%Y%m%d%H%M%S")
 info.save_path 		= "./Result"
 info.save_folder 	= f"Result_{current_time}"
 
-process_hookResult		= TrainProcess_Hook()
-process_folderHandler	= TrainProcess_Folder()
-process_resultRecord	= TrainProcess_ResultRecord()
-process_codeFileSaver	= TrainProcess_PythonFile()
-process_dictDataSaver	= TrainProcess_DictSave()
-process_resultGraph		= TrainProcess_ResultGraph()
+# create process
+process_hook_result		= TrainProcess_Hook()
+process_counter			= TrainProcess_Counter()
+process_folder			= TrainProcess_Folder()
+process_result_data		= TrainProcess_ResultData()
+process_python_file		= TrainProcess_PythonFile()
+process_dict_save		= TrainProcess_DictSave()
+process_result_graph	= TrainProcess_ResultGraph()
+process_result_record_1	= TrainProcess_ResultRecord()
+process_result_record_2	= TrainProcess_ResultRecord()
 
-process_folderHandler.stage = [ModelInfo.Stage.TRAIN_END]
-process_hookResult.stage 	= [ModelInfo.Stage.TRAIN_END]
+# config stage
+process_folder.addStage(			ModelInfo.Stage.TRAIN_START)
+process_python_file.addStage(		ModelInfo.Stage.TRAIN_START)
+process_counter.addStage(			ModelInfo.Stage.ITERATION_VAL_END)
+process_result_data.addStage(		ModelInfo.Stage.ITERATION_VAL_END)
+process_result_record_1.addStage(	ModelInfo.Stage.ITERATION_VAL_END)
+process_dict_save.addStage(			ModelInfo.Stage.TRAIN_END)
+process_hook_result.addStage(		ModelInfo.Stage.TRAIN_END)
+process_result_graph.addStage(		ModelInfo.Stage.TRAIN_END)
+process_result_record_2.addStage(	ModelInfo.Stage.TRAIN_END)
 
-process_resultRecord.accuracy_index = 5  # 5 is the confusion matrix of val_total
-process_codeFileSaver.add(info.model, 	"FastRCNN_Alexnet.py")
-process_dictDataSaver.add(info, 		"ModelInfo.json")
+process_result_data.accuracy_index = 5  # 5 is the confusion matrix of val_total
+process_python_file.add(info.model, "FastRCNN_Alexnet.py")
+process_dict_save.add(info, "ModelInfo.json")
 
-process_resultGraph.addAccuracy([3, 4, 5], ["Label", "Box", "Total"], "Accuracy.png")
-process_resultGraph.addLoss([2, 5], ["Train", "Val"], "Loss.png")
+process_result_graph.addAccuracy([3, 4, 5], ["Label", "Box", "Total"], "Accuracy.png")
+process_result_graph.addLoss([2, 5], ["Train", "Val"], "Loss.png")
+
+process_counter.addProcess(process_result_record_1, 2)
+process_result_record_1.result = process_result_data
+process_result_record_2.result = process_result_data
 
 
 # TODO: may move to other place
 # Linker Function
 def Linker_Hook_execute(stage: int, info_: ModelInfo, data: Dict) -> None:
-	process_resultGraph.addConfusionMatrix(
-		(process_resultRecord.best_epoch, 3),
+	process_result_graph.addConfusionMatrix(
+		(process_result_data.best_epoch, 3),
 		(	["Predict-NIL", "Predict-MOD", "Predict-SEV"],
 			["Ground-NIL", "Ground-MOD", "Ground-SEV"]),
 		"ConfusionMatrix_Class.png")
 
-	process_resultGraph.addConfusionMatrix(
-		(process_resultRecord.best_epoch, 4),
+	process_result_graph.addConfusionMatrix(
+		(process_result_data.best_epoch, 4),
 		(	["Predict-MOD-T", "Predict-MOD-F", "Predict-SEV-T", "Predict-SEV-F"],
 			["Ground-MOD-T", "Ground-MOD-F", "Ground-SEV-T", "Ground-SEV-F"]),
 		"ConfusionMatrix_IOU.png")
 
-	process_resultGraph.addConfusionMatrix(
-		(process_resultRecord.best_epoch, 5),
+	process_result_graph.addConfusionMatrix(
+		(process_result_data.best_epoch, 5),
 		(	["Predict-NIL", "Predict-MOD", "Predict-SEV", "Predict-IOU-F"],
 			["Ground-NIL", "Ground-MOD", "Ground-SEV", "Ground-IOU-F"]),
 		"ConfusionMatrix_Total.png")
@@ -135,21 +151,29 @@ def Linker_Hook_execute(stage: int, info_: ModelInfo, data: Dict) -> None:
 
 # when process_resultGraph is called
 # it should generate the confusion matrix of best epoch
-process_hookResult.func_execute = Linker_Hook_execute
+process_hook_result.func_execute = Linker_Hook_execute
 
-process_codeFileSaver.is_print	= True
-process_dictDataSaver.is_print	= True
-process_resultRecord.is_print 	= True
-process_resultRecord.is_log		= True
-process_resultGraph.is_print	= True
-process_resultGraph.is_log		= True
+process_python_file.is_print		= True
+process_dict_save.is_print			= True
+process_result_data.is_print 		= True
+process_result_record_1.is_print	= True
+process_result_record_2.is_print 	= True
+process_result_graph.is_print		= True
 
-info.process_list.append(process_folderHandler)
-info.process_list.append(process_resultRecord)
-info.process_list.append(process_hookResult)
-info.process_list.append(process_resultGraph)
-info.process_list.append(process_codeFileSaver)
-info.process_list.append(process_dictDataSaver)
+process_result_data.is_log		= True
+process_result_record_1.is_log	= True
+process_result_record_2.is_log	= True
+process_result_graph.is_log		= True
+
+info.process_control.addProcess(process_folder)
+info.process_control.addProcess(process_python_file)
+info.process_control.addProcess(process_result_data)
+info.process_control.addProcess(process_counter)
+info.process_control.addProcess(process_dict_save)
+info.process_control.addProcess(process_hook_result)
+info.process_control.addProcess(process_result_graph)
+info.process_control.addProcess(process_result_record_2)
+
 
 # ----- train -----
 print(f"----- Train -----")

@@ -13,19 +13,27 @@ class TrainProcess_PythonFile(TrainProcess):
 		# data
 		self.save_list:	List[Tuple[Interface_CodePath, str]] = []
 
-		# assumed: path is exist
-		# while there is no limitation on whether folder should exist or not
-		self.path:		str	= ""
-		self.folder:	str	= ""
+		# backup
+		# # assumed: path is exist
+		# # while there is no limitation on whether folder should exist or not
+		# self.path:		str	= ""
+		# self.folder:	str	= ""
 
 		# operation
-		# default stage (can be changed by user)
-		self.stage.append(ModelInfo.Stage.TRAIN_END)
+		# ...
 
 	def __del__(self):
 		return
 
 	# Operation
+	def setData(self, data: Dict) -> None:
+		self.save_list = self._getDataFromDict_(data, "save_list", self.save_list)
+
+	def getData(self) -> Dict:
+		return {
+			"save_list": self.save_list
+		}
+
 	def add(self, obj: Interface_CodePath, filename: str) -> bool:
 		self.save_list.append((obj, filename))
 		return True

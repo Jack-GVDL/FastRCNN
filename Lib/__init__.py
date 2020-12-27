@@ -4,7 +4,7 @@ from .Model.FastRCNN_Resnet18 import FastRCNN_Resnet18
 from .Model.FastRCNN_Resnet50 import FastRCNN_Resnet50
 
 # ----- Train Process -----
-from .TrainProcess import *
+from .TrainUtility import *
 
 # ----- Utility -----
 from .Util import *

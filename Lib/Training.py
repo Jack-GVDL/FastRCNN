@@ -5,7 +5,7 @@ import torch
 from tqdm import tqdm
 
 from .Util import *
-from .TrainProcess import *
+from .TrainUtility import *
 from .Dataset_Processed import Dataset_Processed
 
 

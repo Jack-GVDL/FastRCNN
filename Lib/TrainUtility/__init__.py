@@ -19,7 +19,9 @@ from .TrainProcess_DictSave import TrainProcess_DictSave
 from .TrainProcess_Folder import TrainProcess_Folder
 from .TrainProcess_Hook import TrainProcess_Hook
 from .TrainProcess_ResultGraph import TrainProcess_ResultGraph
-from .TrainProcess_ResultRecord import TrainProcess_ResultRecord
+from .TrainProcess_ResultData import TrainProcess_ResultData
+from .TrainProcess_ResultData import TrainProcess_ResultRecord
+from .TrainProcess_Counter import TrainProcess_Counter
 
 from .Util_Plot import plotLoss
 from .Util_Plot import plotAccuracy

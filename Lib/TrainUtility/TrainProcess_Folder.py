@@ -12,9 +12,7 @@ class TrainProcess_Folder(TrainProcess):
 		# ...
 
 		# operation
-		# default stage (can be changed by user)
-		self.stage.append(ModelInfo.Stage.TRAIN_START)
-		# self.stage.append(ModelInfo.Stage.TRAIN_END)
+		# ...
 
 	def __del__(self):
 		return

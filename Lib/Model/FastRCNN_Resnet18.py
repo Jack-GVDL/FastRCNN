@@ -4,7 +4,7 @@ import torch.nn as nn
 import torchvision
 import torchvision.models as models
 from ..Util import convertBox_xywh_x1y1x2y2
-from ..TrainProcess import Interface_CodePath
+from ..TrainUtility import Interface_CodePath
 
 
 # Data Structure

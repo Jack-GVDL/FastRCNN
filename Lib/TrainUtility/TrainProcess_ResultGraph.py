@@ -39,13 +39,18 @@ class TrainProcess_ResultGraph(TrainProcess):
 		self.accuracy_save_list:	List[str] 		= []
 
 		# operation
-		# default stage (can be changed by user)
-		self.stage.append(ModelInfo.Stage.TRAIN_END)
+		# ...
 
 	def __del__(self):
 		return
 
 	# Operation
+	def setData(self, data: Dict) -> None:
+		pass
+
+	def getData(self) -> Dict:
+		return {}
+
 	def addConfusionMatrix(self, index: Tuple[int, int], label: Tuple[List[str], List[str]], save_file: str) -> bool:
 		self.matrix_index_list.append(index)
 		self.matrix_label_list.append(label)

@@ -3,7 +3,7 @@ from typing import *
 import numpy as np
 from .Dataset_Processed import Dataset_Processed, Config_Processed
 from .Util import *
-from .TrainProcess import *
+from .TrainUtility import *
 
 
 # Function

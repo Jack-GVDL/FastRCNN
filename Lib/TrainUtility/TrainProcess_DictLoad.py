@@ -12,22 +12,29 @@ class TrainProcess_DictLoad(TrainProcess):
 		# data
 		# file_load should be the full path (either relative or absolute)
 		# file type should be json
-		self.load_list:	List[Tuple[Interface_DictData, str]] = []
+		self._load_list:	List[Tuple[Interface_DictData, str]] = []
 
 		# operation
-		# default stage
-		# no default stage, it depends on situation
+		# ...
 
 	def __del__(self):
 		return
 
 	# Operation
+	def setData(self, data: Dict) -> None:
+		self._load_list = self._getDataFromDict_(data, "load_list", self._load_list)
+
+	def getData(self) -> Dict:
+		return {
+			"load_list": self._load_list
+		}
+
 	def add(self, obj: Interface_DictData, file_path: str) -> bool:
-		self.load_list.append((obj, file_path))
+		self._load_list.append((obj, file_path))
 		return True
 
 	def execute(self, stage: int, info: ModelInfo, data: Dict) -> None:
-		for data_load in self.load_list:
+		for data_load in self._load_list:
 
 			# get target object and file path
 			# assumed: file and path must exist

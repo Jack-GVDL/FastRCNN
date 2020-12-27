@@ -19,6 +19,18 @@ class TrainProcess_Hook(TrainProcess):
 		return
 
 	# Operation
+	def setData(self, data: Dict) -> None:
+		self.func_execute 		= self._getDataFromDict_(data, "func_execute", 			self.func_execute)
+		self.func_log_content 	= self._getDataFromDict_(data, "func_log_content", 		self.func_log_content)
+		self.func_print_content = self._getDataFromDict_(data, "func_print_content", 	self.func_print_content)
+
+	def getData(self) -> Dict:
+		return {
+			"func_execute": 		self.func_execute,
+			"func_log_content":		self.func_log_content,
+			"func_print_content":	self.func_print_content
+		}
+
 	def execute(self, stage: int, info: ModelInfo, data: Dict) -> None:
 		if self.func_execute is None:
 			return
