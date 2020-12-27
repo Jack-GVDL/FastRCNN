@@ -4,6 +4,7 @@ Result
 Reference
 Test
 __pycache__
+.idea
 
 # file type
 *.npy
