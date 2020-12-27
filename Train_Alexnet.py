@@ -18,7 +18,7 @@ print(f"Device memory:  {torch.cuda.get_device_properties(env_device).total_memo
 
 # ----- model -----
 info = ModelInfo()
-info.epoch 			= 5
+info.epoch 			= 3
 info.batch_size 	= 1
 info.learning_rate	= 5e-4
 info.train_parameter["Momentum"] = 0.9
@@ -107,8 +107,8 @@ process_resultRecord.accuracy_index = 5  # 5 is the confusion matrix of val_tota
 process_codeFileSaver.add(info.model, 	"FastRCNN_Alexnet.py")
 process_dictDataSaver.add(info, 		"ModelInfo.json")
 
-process_resultGraph.addLoss([3, 4, 5], ["Label", "Box", "Total"], "Loss.png")
-process_resultGraph.addAccuracy([2, 5], ["Train", "Val"], "Accuracy.png")
+process_resultGraph.addAccuracy([3, 4, 5], ["Label", "Box", "Total"], "Accuracy.png")
+process_resultGraph.addLoss([2, 5], ["Train", "Val"], "Loss.png")
 
 
 # TODO: may move to other place

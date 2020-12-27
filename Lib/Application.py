@@ -2,8 +2,7 @@ from typing import *
 import numpy as np
 import torch
 import torch.nn as nn
-from Lib.Util.Util_Box import getBox_Center_xywh, getBox_TopLeft_xywh, scaleBox
-from Lib.Util.Util_Model import offsetBox
+from .Util import *
 from .Model.FastRCNN_Alexnet import FastRCNN_Alexnet
 
 

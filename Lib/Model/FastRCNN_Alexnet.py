@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.models as models
-from Lib.Util.Util_Box import convertBox_xywh_x1y1x2y2
-from Lib.TrainProcess.Util_Interface import Interface_CodePath
+from ..Util import convertBox_xywh_x1y1x2y2
+from ..TrainProcess import Interface_CodePath
 
 
 # Data Structure
@@ -24,8 +24,8 @@ class FastRCNN_Alexnet(
 		super().__init__()
 
 		# hyper-parameter / constant
-		pool_size_roi = (16, 16)
-		# pool_size_roi = (7, 7)
+		# pool_size_roi = (16, 16)
+		pool_size_roi = (7, 7)
 
 		# alexnet input channel number is 3
 		# but OUR image channel number is 4
@@ -33,7 +33,10 @@ class FastRCNN_Alexnet(
 		#
 		# it is assume that all channel is equally important
 		# if not, then other method is required to use
-		self.input_conv = nn.Conv2d(in_channels=4, out_channels=3, kernel_size=(1, 1))
+		# self.input_conv = nn.Conv2d(in_channels=4, out_channels=3, kernel_size=(1, 1))
+
+		# assume: first channel is the most important, rest of the channel is equally important
+		self.input_conv = nn.Conv2d(in_channels=3, out_channels=2, kernel_size=(1, 1))
 
 		# ----- pretrained AlexNet -----
 		# remove the last layer in the features
@@ -113,11 +116,13 @@ class FastRCNN_Alexnet(
 		# convert ROI from xywh to x1y1x2y2
 		roi_list = convertBox_xywh_x1y1x2y2(roi_list)
 
-		# x = image_list
-		x = image_list
-
 		# input
-		x = self.input_conv(x)
+		channel_1		= image_list[:, 0:1, :, :]
+		channel_rest	= image_list[:, 1:4, :, :]
+
+		channel_rest = self.input_conv(channel_rest)
+
+		x = torch.cat((channel_1, channel_rest), 1)
 
 		# alexnet
 		x = self.alexnet_seq(x)

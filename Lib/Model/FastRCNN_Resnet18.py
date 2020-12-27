@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.models as models
-from Lib.Util.Util_Box import convertBox_xywh_x1y1x2y2
-from Lib.TrainProcess.Util_Interface import Interface_CodePath
+from ..Util import convertBox_xywh_x1y1x2y2
+from ..TrainProcess import Interface_CodePath
 
 
 # Data Structure
