@@ -9,7 +9,7 @@ path_model_info: str = "./Result/Result_20201224192614/ModelInfo.json"
 process_dict_data_loader = TrainProcess_DictLoad()
 info = ModelInfo()
 
-process_dict_data_loader.add(info, path_model_info)
+process_dict_data_loader.addDictData(info, path_model_info)
 process_dict_data_loader.execute(-1, info, {})
 
 # ----- plot model result -----

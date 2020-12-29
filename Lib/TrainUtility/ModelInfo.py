@@ -1,7 +1,7 @@
 from typing import *
 import numpy as np
 from .Util_Interface import Interface_DictData
-from .TrainProcess import TrainProcess
+from .TrainProcess import TrainProcessControl
 
 
 # Data Structure
@@ -102,80 +102,6 @@ class TrainResultInfo:
 		if recall + precision == 0:
 			return 0.0
 		return 2 * (recall * precision) / (recall + precision)
-
-
-class TrainProcessControl:
-
-	def __init__(self):
-		super().__init__()
-
-		# data
-		self._process_list: List[TrainProcess] = []
-
-		# format
-		# 0: name
-		# 1: process_creation_function
-		self._template_list: List[Tuple[str, Callable[[], TrainProcess]]] = []
-
-		# operation
-		# ...
-
-	def __del__(self):
-		return
-
-	# Operation
-	# backup
-	# def createProcess(self, name: str) -> TrainProcess:
-	# 	# find template based on name
-	# 	# it should have only one or zero template
-	# 	template = filter(lambda x: (x[0] == name), self._template_list)
-	# 	if not template:
-	# 		return False
-	#
-	# 	# create process
-	# 	process = template[0]()
-	# 	return process
-	#
-	# # TODO: not yet completed
-	# def destroyProcess(self, process: TrainProcess) -> bool:
-	# 	return False
-	#
-	# def addTemplate(self, name: str, func: Callable[[], TrainProcess]) -> bool:
-	# 	template = filter(lambda x: (x[0] == name), self._template_list)
-	# 	if len(template) != 0:
-	# 		return False
-	#
-	# 	self._template_list.append((name, func))
-	# 	return True
-	#
-	# # TODO: not yet completed
-	# def rmTemplate(self, name: str) -> bool:
-	# 	return False
-
-	def addProcess(self, process: TrainProcess) -> bool:
-		self._process_list.append(process)
-		return True
-
-	def rmProcess(self, process: TrainProcess) -> bool:
-		index: int = self._process_list.index(process)
-		self._process_list.pop(index)
-		return True
-
-	def execute(self, stage: int, info: Any, data: Dict, log: List[str]) -> None:
-		# get process that needed to be executed
-		process_list = filter(lambda x: (stage in x.stage), self._process_list)
-
-		# foreach process
-		for process in process_list:
-			process.execute(stage, info, data)
-
-			# logging
-			if process.is_log:
-				log.append(process.getLogContent(stage, info))
-
-			# print to screen (to stdout)
-			if process.is_print:
-				print(process.getPrintContent(stage, info))
 
 
 class ModelInfo(Interface_DictData):

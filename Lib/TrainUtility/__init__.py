@@ -9,7 +9,9 @@
 # from TrainUtility import *
 
 
-from .ModelInfo import TrainProcess
+from .TrainProcess import TrainProcess
+from .TrainProcess import TrainProcessControl
+from .TrainProcess import TrainProcessProbe
 from .ModelInfo import ModelInfo
 from .ModelInfo import TrainResultInfo
 

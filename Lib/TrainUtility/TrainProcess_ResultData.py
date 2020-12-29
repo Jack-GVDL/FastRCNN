@@ -1,7 +1,8 @@
 from typing import *
 import os
 import torch
-from .ModelInfo import TrainProcess, ModelInfo, TrainResultInfo
+from .TrainProcess import TrainProcess
+from .ModelInfo import ModelInfo, TrainResultInfo
 
 
 class TrainProcess_ResultData(TrainProcess):
@@ -10,6 +11,8 @@ class TrainProcess_ResultData(TrainProcess):
 		super().__init__()
 
 		# data
+		self.name = "ResultData"
+
 		self.best_epoch:	int		= 0
 		self.best_loss:		float	= float("inf")
 		self.best_accuracy:	float	= 0.0
@@ -24,6 +27,7 @@ class TrainProcess_ResultData(TrainProcess):
 		return
 
 	# Operation
+	# data
 	def setData(self, data: Dict) -> None:
 		self.accuracy_index = self._getDataFromDict_(data, "accuracy_index", self.accuracy_index)
 
@@ -36,6 +40,7 @@ class TrainProcess_ResultData(TrainProcess):
 			"accuracy_index":	self.accuracy_index
 		}
 
+	# operation
 	def execute(self, stage: int, info: ModelInfo, data: Dict) -> None:
 		# get the most recent result
 		if not info.result_list:
@@ -57,11 +62,17 @@ class TrainProcess_ResultData(TrainProcess):
 		self.best_accuracy	= accuracy
 		self.best_dict		= info.model.state_dict()
 
+	# info
 	def getLogContent(self, stage: int, info: ModelInfo) -> str:
 		return self._getContent_(info)
 
 	def getPrintContent(self, stage: int, info: ModelInfo) -> str:
 		return self._getContent_(info)
+
+	def getInfo(self) -> List[List[str]]:
+		return [
+			["accuracy index", str(self.accuracy_index)]
+		]
 
 	# Protected
 	def _getContent_(self, info: ModelInfo) -> str:
@@ -94,6 +105,8 @@ class TrainProcess_ResultRecord(TrainProcess):
 		super().__init__()
 
 		# data
+		self.name = "ResultRecord"
+
 		self.result: TrainProcess_ResultData = None
 
 		# file name of the saved target
@@ -106,6 +119,7 @@ class TrainProcess_ResultRecord(TrainProcess):
 		return
 
 	# Operation
+	# data
 	def setData(self, data: Dict) -> None:
 		self.result 	= self._getDataFromDict_(data, "result", self.result)
 		self.file_save 	= self._getDataFromDict_(data, "file_save", self.file_save)
@@ -116,6 +130,7 @@ class TrainProcess_ResultRecord(TrainProcess):
 			"file_save":	self.file_save
 		}
 
+	# operation
 	def execute(self, stage: int, info: ModelInfo, data: Dict) -> None:
 		if self.result is None:
 			return
@@ -130,11 +145,17 @@ class TrainProcess_ResultRecord(TrainProcess):
 		# save best dict
 		torch.save(self.result.best_dict, os.path.join(folder_path, self.file_save))
 
+	# info
 	def getLogContent(self, stage: int, info: ModelInfo) -> str:
 		return self._getContent_(info)
 
 	def getPrintContent(self, stage: int, info: ModelInfo) -> str:
 		return self._getContent_(info)
+
+	def getInfo(self) -> List[List[str]]:
+		return [
+			["file_save", self.file_save]
+		]
 
 	# Protected
 	def _getContent_(self, info: ModelInfo) -> str:

@@ -1,5 +1,6 @@
 from typing import *
-from .ModelInfo import TrainProcess, ModelInfo
+from .TrainProcess import TrainProcess
+from .ModelInfo import ModelInfo
 
 
 class TrainProcess_Counter(TrainProcess):
@@ -8,6 +9,8 @@ class TrainProcess_Counter(TrainProcess):
 		super().__init__()
 
 		# data
+		self.name = "Counter"
+
 		self._process_list:	List[TrainProcess] = []
 
 		# counter[_][0: cur, 1: target(exclusive)]
@@ -18,6 +21,15 @@ class TrainProcess_Counter(TrainProcess):
 
 	def __del__(self):
 		return
+
+	# Property
+	@property
+	def process_list(self):
+		return self._process_list.copy()
+
+	@property
+	def counter_list(self):
+		return self._counter_list.copy()
 
 	# Operation
 	# data
@@ -47,7 +59,8 @@ class TrainProcess_Counter(TrainProcess):
 		self._counter_list.pop(index)
 		return True
 
-	def execute(self, stage: int, info: Any, data: Dict) -> None:
+	# execute
+	def execute(self, stage: int, info: ModelInfo, data: Dict) -> None:
 		for index, process in enumerate(self._process_list):
 
 			# add counter
@@ -59,11 +72,30 @@ class TrainProcess_Counter(TrainProcess):
 			# run sub-process
 			process.execute(stage, info, data)
 
+	# info
 	def getPrintContent(self, stage: int, info: Any) -> str:
 		return "Operation: counter"
 
 	def getLogContent(self, stage: int, info: Any) -> str:
 		return "Operation: counter"
 
-	def getInfo(self) -> str:
-		return "Counter"
+	def getInfo(self) -> List[List[str]]:
+		info: List[List[str]] = []
+
+		# ----- process and counter list -----
+		process_list: List[List[str]] = []
+
+		# assume: len(self._process_list) == len(self._counter_list)
+		for index in range(len(self._process_list)):
+			content: str = ""
+			content += f"{self._process_list[index].name} "
+			content += f"{self._counter_list[index]}"
+			process_list.append(["", content])
+
+		# only the first one in process_list will be assigned with a parameter name
+		if process_list:
+			process_list[0][0] = "process"
+
+		info.extend(process_list)
+
+		return info

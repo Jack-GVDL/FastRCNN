@@ -1,7 +1,8 @@
 from typing import *
 import os
 import matplotlib.pyplot as plt
-from .ModelInfo import TrainProcess, ModelInfo, TrainResultInfo
+from .TrainProcess import TrainProcess
+from .ModelInfo import ModelInfo, TrainResultInfo
 from .Util_Plot import plotLoss, plotAccuracy, plotConfusionMatrix
 
 
@@ -11,6 +12,8 @@ class TrainProcess_ResultGraph(TrainProcess):
 		super().__init__()
 
 		# data
+		self.name = "ResultGraph"
+
 		# assume: len(label_list) == len(result[any_index])
 		# self.label_list: List[str] = []
 
@@ -45,12 +48,14 @@ class TrainProcess_ResultGraph(TrainProcess):
 		return
 
 	# Operation
+	# data
 	def setData(self, data: Dict) -> None:
 		pass
 
 	def getData(self) -> Dict:
 		return {}
 
+	# operation
 	def addConfusionMatrix(self, index: Tuple[int, int], label: Tuple[List[str], List[str]], save_file: str) -> bool:
 		self.matrix_index_list.append(index)
 		self.matrix_label_list.append(label)
@@ -88,11 +93,16 @@ class TrainProcess_ResultGraph(TrainProcess):
 		self._plotLoss_(info, folder_path)
 		self._plotAccuracy_(info, folder_path)
 
+	# info
 	def getLogContent(self, stage: int, info: ModelInfo) -> str:
 		return self._getContent_(info)
 
 	def getPrintContent(self, stage: int, info: ModelInfo) -> str:
 		return self._getContent_(info)
+
+	# TODO: not yet completed
+	def getInfo(self) -> List[List[str]]:
+		return []
 
 	# Protected
 	def _getContent_(self, info: ModelInfo) -> str:

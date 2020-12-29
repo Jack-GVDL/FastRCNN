@@ -1,6 +1,7 @@
 import os
 from typing import *
-from .ModelInfo import TrainProcess, ModelInfo, TrainResultInfo
+from .TrainProcess import TrainProcess
+from .ModelInfo import ModelInfo
 
 
 class TrainProcess_Folder(TrainProcess):
@@ -9,7 +10,7 @@ class TrainProcess_Folder(TrainProcess):
 		super().__init__()
 
 		# data
-		# ...
+		self.name = "Folder"
 
 		# operation
 		# ...
@@ -18,6 +19,7 @@ class TrainProcess_Folder(TrainProcess):
 		return
 
 	# Operation
+	# operation
 	def execute(self, stage: int, info: ModelInfo, data: Dict) -> None:
 		path 	= info.save_path
 		folder 	= info.save_folder
@@ -27,3 +29,14 @@ class TrainProcess_Folder(TrainProcess):
 		folder_path = os.path.join(path, folder)
 		if not os.path.isdir(folder_path):
 			os.mkdir(folder_path)
+
+	# info
+	def getPrintContent(self, stage: int, info: ModelInfo) -> str:
+		return self._getContent_(info)
+
+	def getLogContent(self, stage: int, info: ModelInfo) -> str:
+		return self._getContent_(info)
+
+	# Protected
+	def _getContent_(self, info: ModelInfo) -> str:
+		return "Operation: folder"

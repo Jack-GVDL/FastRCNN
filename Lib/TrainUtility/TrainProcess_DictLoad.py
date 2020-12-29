@@ -1,7 +1,8 @@
 from typing import *
 import json
 from .Util_Interface import Interface_DictData
-from .ModelInfo import TrainProcess, ModelInfo
+from .TrainProcess import TrainProcess
+from .ModelInfo import ModelInfo
 
 
 class TrainProcess_DictLoad(TrainProcess):
@@ -10,9 +11,11 @@ class TrainProcess_DictLoad(TrainProcess):
 		super().__init__()
 
 		# data
+		self.name = "DictLoad"
+
 		# file_load should be the full path (either relative or absolute)
 		# file type should be json
-		self._load_list:	List[Tuple[Interface_DictData, str]] = []
+		self._load_list: List[Tuple[Interface_DictData, str]] = []
 
 		# operation
 		# ...
@@ -20,7 +23,13 @@ class TrainProcess_DictLoad(TrainProcess):
 	def __del__(self):
 		return
 
+	# Property
+	@property
+	def load_list(self):
+		return self._load_list.copy()
+
 	# Operation
+	# data
 	def setData(self, data: Dict) -> None:
 		self._load_list = self._getDataFromDict_(data, "load_list", self._load_list)
 
@@ -29,7 +38,8 @@ class TrainProcess_DictLoad(TrainProcess):
 			"load_list": self._load_list
 		}
 
-	def add(self, obj: Interface_DictData, file_path: str) -> bool:
+	# operation
+	def addDictData(self, obj: Interface_DictData, file_path: str) -> bool:
 		self._load_list.append((obj, file_path))
 		return True
 
@@ -49,3 +59,19 @@ class TrainProcess_DictLoad(TrainProcess):
 
 			# save data to target object
 			obj.setDictData(data_json)
+
+	# info
+	def getInfo(self) -> List[List[str]]:
+		info: List[List[str]] = []
+
+		# ----- load list -----
+		load_list = map(lambda x: ["", x[1]], self._load_list)
+		load_list = list(load_list)
+
+		# only the first one in load_list will be assigned with a parameter name
+		if load_list:
+			load_list[0][0] = "save_list"
+
+		info.extend(load_list)
+
+		return info

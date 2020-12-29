@@ -116,8 +116,8 @@ process_result_graph.addStage(		ModelInfo.Stage.TRAIN_END)
 process_result_record_2.addStage(	ModelInfo.Stage.TRAIN_END)
 
 process_result_data.accuracy_index = 5  # 5 is the confusion matrix of val_total
-process_python_file.add(info.model, "FastRCNN_Alexnet.py")
-process_dict_save.add(info, "ModelInfo.json")
+process_python_file.addPythonFile(info.model, "FastRCNN_Alexnet.py")
+process_dict_save.addDictData(info, "ModelInfo.json")
 
 process_result_graph.addAccuracy([3, 4, 5], ["Label", "Box", "Total"], "Accuracy.png")
 process_result_graph.addLoss([2, 5], ["Train", "Val"], "Loss.png")
@@ -173,6 +173,15 @@ info.process_control.addProcess(process_dict_save)
 info.process_control.addProcess(process_hook_result)
 info.process_control.addProcess(process_result_graph)
 info.process_control.addProcess(process_result_record_2)
+
+# probe
+probe = TrainProcessProbe()
+probe.process_control = info.process_control
+probe.probe()
+
+# TODO: test
+print(probe.getLogContent(0, None))
+breakpoint()
 
 
 # ----- train -----
